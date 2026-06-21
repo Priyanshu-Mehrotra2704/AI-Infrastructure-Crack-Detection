@@ -24,7 +24,7 @@ MODEL_PATH = os.path.join(
 IMAGE_PATH = os.path.join(
     BASE_DIR,
     "test_images",
-    "OIP.jpg"
+    "sample.jpg"
 )
 
 # ====================================
@@ -59,9 +59,7 @@ model = load_model(MODEL_PATH)
 
 print("Model Loaded Successfully!")
 
-# ====================================
-# LOAD IMAGE
-# ====================================
+
 
 if not os.path.exists(IMAGE_PATH):
     raise Exception(
@@ -106,7 +104,7 @@ print("\nRaw Prediction:", confidence)
 
 if confidence > 0.5:
 
-    print("\n===== RESULT =====")
+    print("\n=== RESULT ===")
     print("Crack Detected")
     print(
         f"Confidence: {confidence * 100:.2f}%"
@@ -114,7 +112,7 @@ if confidence > 0.5:
 
 else:
 
-    print("\n===== RESULT =====")
+    print("\n=== RESULT ===")
     print("No Crack Detected")
     print(
         f"Confidence: {(1 - confidence) * 100:.2f}%"
