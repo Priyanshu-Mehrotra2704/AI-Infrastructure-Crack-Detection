@@ -6,7 +6,6 @@ AI Infrastructure Crack Detection is a Computer Vision based project focused on 
 
 * Bridges
 * Roads
-* Buildings
 * Tunnels
 * Railway tracks
 
