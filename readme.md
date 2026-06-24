@@ -58,7 +58,7 @@ This project is currently under development.
 
 ## Database
 
-* PostgreSQL / MongoDB
+MongoDB
 
 ---
 
