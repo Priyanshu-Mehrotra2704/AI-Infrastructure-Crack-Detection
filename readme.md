@@ -1,4 +1,4 @@
-# AI Infrastructure Crack Detection(Project is delayed due to ETE exam)
+# AI Infrastructure Crack Detection
 
 ## Overview
 
