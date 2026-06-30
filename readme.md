@@ -1,4 +1,4 @@
-# AI Infrastructure Crack Detection(Project is delayed due to ETE exam)
+# AI Infrastructure Crack Detection
 
 ## Overview
 
@@ -6,7 +6,6 @@ AI Infrastructure Crack Detection is a Computer Vision based project focused on 
 
 * Bridges
 * Roads
-* Buildings
 * Tunnels
 * Railway tracks
 
@@ -59,7 +58,7 @@ This project is currently under development.
 
 ## Database
 
-* PostgreSQL / MongoDB
+MongoDB
 
 ---
 
