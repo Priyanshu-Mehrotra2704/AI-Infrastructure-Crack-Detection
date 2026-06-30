@@ -3,9 +3,13 @@ import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
 from fastapi import FastAPI, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+
 
 
 app = FastAPI()
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
+)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR,"..", "ai-model", "models", "best_model.keras")
 print("Model Path:", MODEL_PATH)
