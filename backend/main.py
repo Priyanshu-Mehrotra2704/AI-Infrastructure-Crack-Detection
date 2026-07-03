@@ -2,7 +2,10 @@ import os
 import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Depends
+from sqlalchemy.orm import Session
+from database import get_db
+from crud import create_inspection
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -24,7 +27,7 @@ def home():
     return {"message": "Welcome to the Image Classification API!"}
 
 @app.post("/predict/")
-async def predict(file: UploadFile = File(...)):
+async def predict(file: UploadFile = File(...), db: Session = Depends(get_db)):
     contents = await file.read()
     nparr = np.frombuffer(contents, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -40,6 +43,14 @@ async def predict(file: UploadFile = File(...)):
     else:
         result = "No Crack"
         confidence = round((1 - confidence) * 100, 2)
+    create_inspection(
+        db=db,
+        image_name=file.filename,
+        prediction=result,
+        confidence=confidence,
+        model_name="EfficientNetB0",
+        structure_type="Pavement"
+    )
     return {"result": result, "confidence": confidence}
 
 

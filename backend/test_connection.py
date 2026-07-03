@@ -1,5 +1,3 @@
-# test_connection.py
-
 from database import engine
 
 try:
