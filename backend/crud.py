@@ -40,7 +40,7 @@ def get_all_inspections(db: Session):
     return db.query(
         InspectionHistory
     ).order_by(
-        InspectionHistory.id.desc()
+        InspectionHistory.created_at.desc()
     ).all()
 
 

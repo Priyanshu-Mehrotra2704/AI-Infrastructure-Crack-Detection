@@ -5,7 +5,7 @@ from tensorflow.keras.models import load_model
 from fastapi import FastAPI, UploadFile, File, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from crud import create_inspection
+from crud import create_inspection, get_all_inspections
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -52,5 +52,9 @@ async def predict(file: UploadFile = File(...), db: Session = Depends(get_db)):
         structure_type="Pavement"
     )
     return {"result": result, "confidence": confidence}
+@app.get("/history/")
+def history(db: Session = Depends(get_db)):
+    inspections = get_all_inspections(db)
+    return inspections
 
 

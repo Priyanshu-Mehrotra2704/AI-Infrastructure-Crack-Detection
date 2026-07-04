@@ -5,12 +5,14 @@ import Navbar from "../components/Navbar";
 import UploadCard from "../components/UploadCard";
 import ResultCard from "../components/ResultCard";
 import Loader from "../components/Loader";
+import History from "../components/History";
 
 function Dashboard() {
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [refreshHistory, setRefreshHistory] = useState(false);
 
     const analyzeImage = async () => {
 
@@ -33,6 +35,7 @@ function Dashboard() {
             );
 
             setResult(response.data);
+            setRefreshHistory(!refreshHistory);
 
         } catch (error) {
 
@@ -153,10 +156,9 @@ function Dashboard() {
                     {loading ? (
                         <Loader />
                     ) : (
-                        <ResultCard
-                            result={result}
-                        />
+                        <ResultCard result={result}/>
                     )}
+                    <History refresh= {setRefreshHistory}/>
 
                 </div>
 
