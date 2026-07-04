@@ -5,7 +5,7 @@ from tensorflow.keras.models import load_model
 from fastapi import FastAPI, UploadFile, File, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from crud import create_inspection, get_all_inspections
+from crud import create_inspection, get_all_inspections, delete_inspection
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -58,3 +58,15 @@ def history(db: Session = Depends(get_db)):
     return inspections
 
 
+@app.delete("/history/{inspection_id}/")
+def delete_history(inspection_id: int, db: Session = Depends(get_db)):
+    inspection = delete_inspection(db, inspection_id)
+
+    if inspection is None:
+        return {
+            "message": "Inspection not found"
+        }
+
+    return {
+        "message": "Deleted Successfully"
+    }

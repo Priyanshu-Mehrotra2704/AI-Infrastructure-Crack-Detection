@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { getHistory } from "../services/api";
+import { getHistory, deleteHistory } from "../services/api";
+import { FaTrash } from "react-icons/fa";
 
-function History() {
+function History({ refresh }) {
 
     const [history, setHistory] = useState([]);
+    
     const fetchHistory = async () => {
 
         try {
@@ -19,12 +21,24 @@ function History() {
         }
 
     };
+    const handleDelete = async (id) => {
+
+        try {
+
+            await deleteHistory(id);
+            fetchHistory();
+
+        } catch (error) {
+
+            console.error(error);
+        }
+    }
 
     useEffect(() => {
 
         fetchHistory();
 
-    }, []);
+    }, [refresh]);
 
 
     return (
@@ -65,6 +79,7 @@ function History() {
                                 <th className="p-2">Model</th>
 
                                 <th className="p-2">Structure</th>
+                                <th className="p-2">Action</th>
 
                             </tr>
 
@@ -98,6 +113,14 @@ function History() {
 
                                         <td className="p-2">
                                             {item.structure_type}
+                                        </td>
+                                        <td className="p-2">
+                                            <button
+                                                onClick={() => handleDelete(item.id)}
+                                                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                                            >
+                                                <FaTrash />
+                                            </button>
                                         </td>
 
                                     </tr>
