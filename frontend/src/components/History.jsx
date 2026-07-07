@@ -5,7 +5,7 @@ import { FaTrash } from "react-icons/fa";
 function History({ refresh }) {
 
     const [history, setHistory] = useState([]);
-    
+    const [search, setSearch] = useState("");
     const fetchHistory = async () => {
 
         try {
@@ -50,6 +50,21 @@ function History({ refresh }) {
                 Inspection History
 
             </h2>
+            <div className="flex justify-between items-center mb-6">
+
+        <h2 className="text-2xl font-bold">
+            Inspection History
+        </h2>
+
+            <input
+            type="text"
+            placeholder="Search image..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="border border-gray-300 rounded-lg px-4 py-2 w-72 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+        </div>
 
             {
                 history.length === 0 ?
