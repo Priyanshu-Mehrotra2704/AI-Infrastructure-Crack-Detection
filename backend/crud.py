@@ -62,3 +62,16 @@ def delete_inspection(
         db.commit()
 
     return inspection
+def get_dashboard_stats(db: Session):
+    total = db.query(InspectionHistory).count()
+    crack = db.query(InspectionHistory).filter(InspectionHistory.prediction == "Crack").count()
+    no_crack = db.query(InspectionHistory).filter(InspectionHistory.prediction == "No Crack").count()
+    accuracy = 0
+    if (total > 0):
+        accuracy = round(max(crack,no_crack)/total * 100, 2)
+    return {
+        "total" : total,
+        "crack": crack,
+        "no_crack": no_crack,
+        "accuracy": accuracy
+    }

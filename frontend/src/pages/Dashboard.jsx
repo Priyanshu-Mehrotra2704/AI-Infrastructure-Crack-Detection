@@ -1,45 +1,93 @@
-import { useState } from "react";
-import axios from "axios";
+import { useState, useEffect } from "react";
 
 import Navbar from "../components/Navbar";
 import UploadCard from "../components/UploadCard";
 import ResultCard from "../components/ResultCard";
 import Loader from "../components/Loader";
 import History from "../components/History";
+import StatsCard from "../components/StatsCard";
+
+import {
+    predictImage,
+    getDashboardStats
+} from "../services/api";
+
+import {
+    FaChartBar,
+    FaBug,
+    FaCheckCircle,
+    FaRobot
+} from "react-icons/fa";
 
 function Dashboard() {
+
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
+
     const [refreshHistory, setRefreshHistory] = useState(false);
+
+    const [stats, setStats] = useState({
+        total: 0,
+        crack: 0,
+        no_crack: 0,
+        accuracy: 0
+    });
+
+    const fetchDashboardStats = async () => {
+
+        try {
+
+            const response = await getDashboardStats();
+            setStats(response.data);
+
+        } catch (error) {
+
+            console.error(error);
+
+        }
+
+    };
+
+    useEffect(() => {
+
+        fetchDashboardStats();
+
+    }, []);
 
     const analyzeImage = async () => {
 
         if (!file) {
+
             alert("Please select an image.");
+
             return;
+
         }
 
         const formData = new FormData();
+
         formData.append("file", file);
 
         setLoading(true);
+
         setResult(null);
 
         try {
 
-            const response = await axios.post(
-                "http://localhost:8000/predict/",
-                formData
-            );
+            const response = await predictImage(formData);
 
             setResult(response.data);
+
+            fetchDashboardStats();
+
             setRefreshHistory(!refreshHistory);
 
         } catch (error) {
 
             console.error(error);
+
             alert("Prediction failed.");
 
         } finally {
@@ -47,6 +95,7 @@ function Dashboard() {
             setLoading(false);
 
         }
+
     };
 
     return (
@@ -56,6 +105,8 @@ function Dashboard() {
             <Navbar />
 
             <div className="max-w-7xl mx-auto px-6 py-10">
+
+                {/* Heading */}
 
                 <div className="text-center mb-10">
 
@@ -75,71 +126,35 @@ function Dashboard() {
 
                 {/* Statistics */}
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
 
-                    <div className="bg-white rounded-xl shadow-md p-6">
+                    <StatsCard
+                        title="Total Inspections"
+                        value={stats.total}
+                        icon={<FaChartBar />}
+                        color="bg-blue-600"
+                    />
 
-                        <h3 className="text-gray-500">
+                    <StatsCard
+                        title="Crack"
+                        value={stats.crack}
+                        icon={<FaBug />}
+                        color="bg-red-500"
+                    />
 
-                            Total Scans
+                    <StatsCard
+                        title="No Crack"
+                        value={stats.no_crack}
+                        icon={<FaCheckCircle />}
+                        color="bg-green-500"
+                    />
 
-                        </h3>
-
-                        <h1 className="text-3xl font-bold mt-3">
-
-                            124
-
-                        </h1>
-
-                    </div>
-
-                    <div className="bg-white rounded-xl shadow-md p-6">
-
-                        <h3 className="text-gray-500">
-
-                            Cracks
-
-                        </h3>
-
-                        <h1 className="text-3xl font-bold text-red-500 mt-3">
-
-                            37
-
-                        </h1>
-
-                    </div>
-
-                    <div className="bg-white rounded-xl shadow-md p-6">
-
-                        <h3 className="text-gray-500">
-
-                            Safe
-
-                        </h3>
-
-                        <h1 className="text-3xl font-bold text-green-600 mt-3">
-
-                            87
-
-                        </h1>
-
-                    </div>
-
-                    <div className="bg-white rounded-xl shadow-md p-6">
-
-                        <h3 className="text-gray-500">
-
-                            Accuracy
-
-                        </h3>
-
-                        <h1 className="text-3xl font-bold text-blue-600 mt-3">
-
-                            84%
-
-                        </h1>
-
-                    </div>
+                    <StatsCard
+                        title="Accuracy"
+                        value={`${stats.accuracy}%`}
+                        icon={<FaRobot />}
+                        color="bg-purple-600"
+                    />
 
                 </div>
 
@@ -153,14 +168,15 @@ function Dashboard() {
                         setPreview={setPreview}
                     />
 
-                    {loading ? (
-                        <Loader />
-                    ) : (
-                        <ResultCard result={result}/>
-                    )}
-                    <History refresh= {setRefreshHistory}/>
+                    {
+                        loading
+                            ? <Loader />
+                            : <ResultCard result={result} />
+                    }
 
                 </div>
+
+                {/* Analyze Button */}
 
                 <div className="mt-8 flex justify-center">
 
@@ -178,11 +194,20 @@ function Dashboard() {
 
                 </div>
 
+                {/* History */}
+
+                <div className="mt-12">
+
+                    <History refresh={refreshHistory} />
+
+                </div>
+
             </div>
 
         </div>
 
     );
+
 }
 
 export default Dashboard;

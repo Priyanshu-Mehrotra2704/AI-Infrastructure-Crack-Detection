@@ -1,14 +1,17 @@
-import axios from 'axios';
+import axios from "axios";
 
-const api = axios.create({
-  baseURL: 'http://localhost:8000',
+const API = axios.create({
+    baseURL: "http://localhost:8000"
 });
 
-export const predictImage = (formData) => 
-  api.post('/predict/', formData);
+export const predictImage = (formData) =>
+    API.post("/predict/", formData);
 
-export const getHistory = () => 
-  api.get('/history/');
+export const getHistory = () =>
+    API.get("/history/");
 
 export const deleteHistory = (id) =>
-  api.delete(`/history/${id}`);
+    API.delete(`/history/${id}/`);
+
+export const getDashboardStats = () =>
+    API.get("/dashboard/stats");

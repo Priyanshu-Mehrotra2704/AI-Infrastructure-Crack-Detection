@@ -5,7 +5,7 @@ from tensorflow.keras.models import load_model
 from fastapi import FastAPI, UploadFile, File, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from crud import create_inspection, get_all_inspections, delete_inspection
+from crud import create_inspection, get_all_inspections, delete_inspection, get_dashboard_stats
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -70,3 +70,6 @@ def delete_history(inspection_id: int, db: Session = Depends(get_db)):
     return {
         "message": "Deleted Successfully"
     }
+@app.get("/dashboard/stats")
+def dashboard_stats(db: Session = Depends(get_db)):
+    return get_dashboard_stats(db)

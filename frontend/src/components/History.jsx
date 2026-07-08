@@ -3,98 +3,107 @@ import { getHistory, deleteHistory } from "../services/api";
 import { FaTrash } from "react-icons/fa";
 
 function History({ refresh }) {
-
     const [history, setHistory] = useState([]);
     const [search, setSearch] = useState("");
+    const [filter, setFilter] = useState("All");
+
     const fetchHistory = async () => {
-
         try {
-
             const response = await getHistory();
-
             setHistory(response.data);
-
         } catch (error) {
-
-            console.log(error);
-
-        }
-
-    };
-    const handleDelete = async (id) => {
-
-        try {
-
-            await deleteHistory(id);
-            fetchHistory();
-
-        } catch (error) {
-
             console.error(error);
         }
-    }
+    };
+
+    const handleDelete = async (id) => {
+        try {
+            await deleteHistory(id);
+            fetchHistory();
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     useEffect(() => {
-
         fetchHistory();
-
     }, [refresh]);
 
+    const filteredHistory = history.filter((item) => {
+        const matchSearch = item.image_name
+            .toLowerCase()
+            .includes(search.toLowerCase());
+
+        const matchFilter =
+            filter === "All" || item.prediction === filter;
+
+        return matchSearch && matchFilter;
+    });
 
     return (
+        <div className="mt-10 bg-white rounded-xl shadow-lg p-6">
 
-        <div className="mt-10">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
 
-            <h2 className="text-2xl font-bold mb-5">
+                <h2 className="text-2xl font-bold">
+                    Inspection History
+                </h2>
 
-                Inspection History
+                <div className="flex gap-3">
 
-            </h2>
-            <div className="flex justify-between items-center mb-6">
+                    <input
+                        type="text"
+                        placeholder="Search image..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
 
-        <h2 className="text-2xl font-bold">
-            Inspection History
-        </h2>
+                    <select
+                        value={filter}
+                        onChange={(e) => setFilter(e.target.value)}
+                        className="border border-gray-300 rounded-lg px-3 py-2"
+                    >
+                        <option>All</option>
+                        <option>Crack</option>
+                        <option>No Crack</option>
+                    </select>
 
-            <input
-            type="text"
-            placeholder="Search image..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border border-gray-300 rounded-lg px-4 py-2 w-72 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+                </div>
 
-        </div>
+            </div>
 
-            {
-                history.length === 0 ?
+            {filteredHistory.length === 0 ? (
 
-                (
+                <div className="text-center py-10">
 
-                    <p>No inspections yet.</p>
+                    <h3 className="text-xl font-semibold mb-2">
+                        No Inspection History
+                    </h3>
 
-                )
+                    <p className="text-gray-500">
+                        Upload an image to see previous inspections.
+                    </p>
 
-                :
+                </div>
 
-                (
+            ) : (
 
-                    <table className="w-full border">
+                <div className="overflow-x-auto">
+
+                    <table className="w-full bg-white rounded-xl overflow-hidden shadow-lg">
 
                         <thead>
 
-                            <tr className="bg-gray-200">
+                            <tr className="bg-blue-600 text-white">
 
-                                <th className="p-2">Image</th>
-
-                                <th className="p-2">Prediction</th>
-
-                                <th className="p-2">Confidence</th>
-
-                                <th className="p-2">Model</th>
-
-                                <th className="p-2">Structure</th>
-                                <th className="p-2">Action</th>
+                                <th className="p-3">Image</th>
+                                <th className="p-3">Prediction</th>
+                                <th className="p-3">Confidence</th>
+                                <th className="p-3">Model</th>
+                                <th className="p-3">Structure</th>
+                                <th className="p-3">Date</th>
+                                <th className="p-3">Action</th>
 
                             </tr>
 
@@ -102,59 +111,72 @@ function History({ refresh }) {
 
                         <tbody>
 
-                            {
-                                history.map((item) => (
+                            {filteredHistory.map((item) => (
 
-                                    <tr
-                                        key={item.id}
-                                        className="text-center border-t"
-                                    >
+                                <tr
+                                    key={item.id}
+                                    className="text-center border-b hover:bg-gray-100 transition"
+                                >
 
-                                        <td className="p-2">
-                                            {item.image_name}
-                                        </td>
+                                    <td className="p-3 font-medium">
+                                        {item.image_name}
+                                    </td>
 
-                                        <td className="p-2">
+                                    <td className="p-3">
+
+                                        <span
+                                            className={`px-3 py-1 rounded-full text-white text-sm font-semibold ${
+                                                item.prediction === "Crack"
+                                                    ? "bg-red-500"
+                                                    : "bg-green-500"
+                                            }`}
+                                        >
                                             {item.prediction}
-                                        </td>
+                                        </span>
 
-                                        <td className="p-2">
-                                            {item.confidence}%
-                                        </td>
+                                    </td>
 
-                                        <td className="p-2">
-                                            {item.model_name}
-                                        </td>
+                                    <td className="p-3 font-semibold text-blue-600">
+                                        {item.confidence.toFixed(2)}%
+                                    </td>
 
-                                        <td className="p-2">
-                                            {item.structure_type}
-                                        </td>
-                                        <td className="p-2">
-                                            <button
-                                                onClick={() => handleDelete(item.id)}
-                                                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                                            >
-                                                <FaTrash />
-                                            </button>
-                                        </td>
+                                    <td className="p-3">
+                                        {item.model_name}
+                                    </td>
 
-                                    </tr>
+                                    <td className="p-3">
+                                        {item.structure_type}
+                                    </td>
 
-                                ))
-                            }
+                                    <td className="p-3">
+                                        {new Date(item.created_at).toLocaleString()}
+                                    </td>
+
+                                    <td className="p-3">
+
+                                        <button
+                                            onClick={() => handleDelete(item.id)}
+                                            className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full transition"
+                                        >
+                                            <FaTrash />
+                                        </button>
+
+                                    </td>
+
+                                </tr>
+
+                            ))}
 
                         </tbody>
 
                     </table>
 
-                )
+                </div>
 
-            }
+            )}
 
         </div>
-
     );
-
 }
 
 export default History;
