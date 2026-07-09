@@ -6,6 +6,8 @@ import ResultCard from "../components/ResultCard";
 import Loader from "../components/Loader";
 import History from "../components/History";
 import StatsCard from "../components/StatsCard";
+import PieChartCard from "../components/Charts/PieChartCard";
+import BarChartCard from "../components/Charts/BarChartCard";
 
 import {
     predictImage,
@@ -159,6 +161,13 @@ function Dashboard() {
                 </div>
 
                 {/* Upload + Result */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+
+                    <PieChartCard stats={stats} />
+
+                    <BarChartCard stats={stats} />
+
+                </div>
 
                 <div className="grid md:grid-cols-2 gap-8">
 
