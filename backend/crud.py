@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 
 from models import InspectionHistory
-
+from sqlalchemy import func
+from datetime import datetime, timedelta
 
 def create_inspection(
     db: Session,
@@ -69,9 +70,36 @@ def get_dashboard_stats(db: Session):
     accuracy = 0
     if (total > 0):
         accuracy = round(max(crack,no_crack)/total * 100, 2)
+    avg_confidence = (db.query(func.avg(InspectionHistory.confidence))).scalar()
+    if avg_confidence is None:
+        avg_confidence = 0
+
+    max_confidence = (
+        db.query(func.max(InspectionHistory.confidence))
+        .scalar()
+    )
+
+    if max_confidence is None:
+        max_confidence = 0
+
+    today = datetime.utcnow().date()
+
+    today_count = (
+        db.query(InspectionHistory)
+        .filter(
+            func.date(InspectionHistory.created_at) == today
+        )
+        .count()
+    )
+    
     return {
         "total" : total,
         "crack": crack,
         "no_crack": no_crack,
-        "accuracy": accuracy
+        "accuracy": accuracy,
+        "average_confidence": round(avg_confidence, 2),
+
+        "highest_confidence": round(max_confidence, 2),
+
+        "today_inspections": today_count
     }
