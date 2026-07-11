@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 
 import Navbar from "../components/Navbar";
 import UploadCard from "../components/UploadCard";
-import ResultCard from "../components/ResultCard";
+// import ResultCard from "../components/ResultCard";
 import Loader from "../components/Loader";
 import History from "../components/History";
 import StatsCard from "../components/StatsCard";
 import PieChartCard from "../components/Charts/PieChartCard";
-import BarChartCard from "../components/Charts/BarChartCard";
+// import BarChartCard from "../components/Charts/BarChartCard";
+import BatchResultTable from "../components/BatchResultTable";
+
 import WeeklyTrendChart from "../components/Charts/WeeklyTrendChart";
 
 import {
@@ -35,10 +37,11 @@ import {
 
 function Dashboard() {
 
-    const [file, setFile] = useState(null);
-    const [preview, setPreview] = useState(null);
-    const [result, setResult] = useState(null);
+    const [file, setFile] = useState([]);
+    const [preview, setPreview] = useState([]);
+    const [result, setResult] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [selectedModel, setSelectedModel] = useState("Pavement");
 
     const [refreshHistory, setRefreshHistory] = useState(false);
 
@@ -93,7 +96,12 @@ function Dashboard() {
 
         const formData = new FormData();
 
-        formData.append("file", file);
+        file.forEach((file) => {
+
+            formData.append("files", file);
+
+        });
+        formData.append("model", selectedModel);
 
         setLoading(true);
 
@@ -103,7 +111,7 @@ function Dashboard() {
 
             const response = await predictImage(formData);
 
-            setResult(response.data);
+            setResult(response.data.results);
 
             fetchDashboardStats();
 
@@ -211,7 +219,45 @@ function Dashboard() {
                     <WeeklyTrendChart stats={stats} />
 
                 </div>
+                <div className="mb-8">
 
+                    <label className="block text-lg font-semibold mb-2">
+
+                        Select Structure
+
+                    </label>
+
+                    <select
+
+                        value={selectedModel}
+
+                        onChange={(e)=>setSelectedModel(e.target.value)}
+
+                        className="w-full md:w-72 border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+
+                    >
+
+                        <option value="Pavement">
+
+                            Pavement
+
+                        </option>
+
+                        <option value="Wall">
+
+                            Wall
+
+                        </option>
+
+                        <option value="Deck">
+
+                            Bridge Deck
+
+                        </option>
+
+                    </select>
+
+                </div>
                 <div className="grid md:grid-cols-2 gap-8">
 
                     <UploadCard
@@ -223,7 +269,9 @@ function Dashboard() {
                     {
                         loading
                             ? <Loader />
-                            : <ResultCard result={result} />
+                            : <BatchResultTable
+                                results={result}
+                            />
                     }
 
                 </div>

@@ -1,4 +1,4 @@
-function ResultCard({ result }) {
+function ResultCard({ result, selectedModel }) {
 
     if (!result) {
 
@@ -20,8 +20,11 @@ function ResultCard({ result }) {
 
                     Upload an infrastructure image and click
                     <br />
+
                     <span className="font-semibold">
+
                         Analyze Image
+
                     </span>
 
                 </p>
@@ -32,8 +35,7 @@ function ResultCard({ result }) {
 
     }
 
-    const isCrack =
-        result.result.toLowerCase().includes("crack");
+    const isCrack = result.result.toLowerCase().includes("crack");
 
     return (
 
@@ -46,6 +48,28 @@ function ResultCard({ result }) {
             </h2>
 
             <div className="space-y-6">
+
+                {/* Structure */}
+
+                <div className="flex justify-between items-center">
+
+                    <span className="text-gray-500">
+
+                        Structure
+
+                    </span>
+
+                    <span className="font-semibold text-indigo-600">
+
+                        {selectedModel}
+
+                    </span>
+
+                </div>
+
+                <hr />
+
+                {/* Prediction */}
 
                 <div className="flex justify-between items-center">
 
@@ -71,6 +95,8 @@ function ResultCard({ result }) {
 
                 <hr />
 
+                {/* Confidence */}
+
                 <div className="flex justify-between items-center">
 
                     <span className="text-gray-500">
@@ -89,6 +115,8 @@ function ResultCard({ result }) {
 
                 <hr />
 
+                {/* Model */}
+
                 <div className="flex justify-between items-center">
 
                     <span className="text-gray-500">
@@ -99,13 +127,15 @@ function ResultCard({ result }) {
 
                     <span className="font-semibold">
 
-                        CNN
+                        EfficientNetB0
 
                     </span>
 
                 </div>
 
                 <hr />
+
+                {/* Status */}
 
                 <div className="flex justify-between items-center">
 
@@ -124,6 +154,8 @@ function ResultCard({ result }) {
                 </div>
 
                 <hr />
+
+                {/* Inference Time */}
 
                 <div className="flex justify-between items-center">
 

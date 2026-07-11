@@ -1,52 +1,115 @@
 import { useEffect, useState } from "react";
-import { getHistory, deleteHistory } from "../services/api";
-import { FaTrash } from "react-icons/fa";
+import {
+    getHistory,
+    deleteHistory,
+    downloadReport
+} from "../services/api";
+
+import {
+    FaTrash,
+    FaDownload
+} from "react-icons/fa";
 
 function History({ refresh }) {
+
     const [history, setHistory] = useState([]);
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("All");
 
     const fetchHistory = async () => {
-        try {
-            const response = await getHistory();
-            setHistory(response.data);
-        } catch (error) {
-            console.error(error);
-        }
-    };
 
-    const handleDelete = async (id) => {
         try {
-            await deleteHistory(id);
-            fetchHistory();
+
+            const response = await getHistory();
+
+            setHistory(response.data);
+
         } catch (error) {
+
             console.error(error);
+
         }
+
     };
 
     useEffect(() => {
+
         fetchHistory();
+
     }, [refresh]);
 
+    const handleDelete = async (id) => {
+
+        try {
+
+            await deleteHistory(id);
+
+            fetchHistory();
+
+        } catch (error) {
+
+            console.error(error);
+
+        }
+
+    };
+
+    const handleDownload = async (id, imageName) => {
+
+        try {
+
+            const response = await downloadReport(id);
+
+            const url = window.URL.createObjectURL(
+                new Blob([response.data])
+            );
+
+            const link = document.createElement("a");
+
+            link.href = url;
+
+            link.download = `${imageName}.pdf`;
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            link.remove();
+
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+
+            console.error(error);
+
+        }
+
+    };
+
     const filteredHistory = history.filter((item) => {
+
         const matchSearch = item.image_name
             .toLowerCase()
             .includes(search.toLowerCase());
 
         const matchFilter =
-            filter === "All" || item.prediction === filter;
+            filter === "All" ||
+            item.prediction === filter;
 
         return matchSearch && matchFilter;
+
     });
 
     return (
+
         <div className="mt-10 bg-white rounded-xl shadow-lg p-6">
 
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
 
                 <h2 className="text-2xl font-bold">
+
                     Inspection History
+
                 </h2>
 
                 <div className="flex gap-3">
@@ -64,119 +127,189 @@ function History({ refresh }) {
                         onChange={(e) => setFilter(e.target.value)}
                         className="border border-gray-300 rounded-lg px-3 py-2"
                     >
+
                         <option>All</option>
                         <option>Crack</option>
                         <option>No Crack</option>
+
                     </select>
 
                 </div>
 
             </div>
 
-            {filteredHistory.length === 0 ? (
+            {
 
-                <div className="text-center py-10">
+                filteredHistory.length === 0 ?
 
-                    <h3 className="text-xl font-semibold mb-2">
-                        No Inspection History
-                    </h3>
+                (
 
-                    <p className="text-gray-500">
-                        Upload an image to see previous inspections.
-                    </p>
+                    <div className="text-center py-10">
 
-                </div>
+                        <h3 className="text-xl font-semibold mb-2">
 
-            ) : (
+                            No Inspection History
 
-                <div className="overflow-x-auto">
+                        </h3>
 
-                    <table className="w-full bg-white rounded-xl overflow-hidden shadow-lg">
+                        <p className="text-gray-500">
 
-                        <thead>
+                            Upload an image to see previous inspections.
 
-                            <tr className="bg-blue-600 text-white">
+                        </p>
 
-                                <th className="p-3">Image</th>
-                                <th className="p-3">Prediction</th>
-                                <th className="p-3">Confidence</th>
-                                <th className="p-3">Model</th>
-                                <th className="p-3">Structure</th>
-                                <th className="p-3">Date</th>
-                                <th className="p-3">Action</th>
+                    </div>
 
-                            </tr>
+                )
 
-                        </thead>
+                :
 
-                        <tbody>
+                (
 
-                            {filteredHistory.map((item) => (
+                    <div className="overflow-x-auto">
 
-                                <tr
-                                    key={item.id}
-                                    className="text-center border-b hover:bg-gray-100 transition"
-                                >
+                        <table className="w-full bg-white rounded-xl overflow-hidden shadow-lg">
 
-                                    <td className="p-3 font-medium">
-                                        {item.image_name}
-                                    </td>
+                            <thead>
 
-                                    <td className="p-3">
+                                <tr className="bg-blue-600 text-white">
 
-                                        <span
-                                            className={`px-3 py-1 rounded-full text-white text-sm font-semibold ${
-                                                item.prediction === "Crack"
-                                                    ? "bg-red-500"
-                                                    : "bg-green-500"
-                                            }`}
-                                        >
-                                            {item.prediction}
-                                        </span>
+                                    <th className="p-3">Image</th>
 
-                                    </td>
+                                    <th className="p-3">Prediction</th>
 
-                                    <td className="p-3 font-semibold text-blue-600">
-                                        {item.confidence.toFixed(2)}%
-                                    </td>
+                                    <th className="p-3">Confidence</th>
 
-                                    <td className="p-3">
-                                        {item.model_name}
-                                    </td>
+                                    <th className="p-3">Model</th>
 
-                                    <td className="p-3">
-                                        {item.structure_type}
-                                    </td>
+                                    <th className="p-3">Structure</th>
 
-                                    <td className="p-3">
-                                        {new Date(item.created_at).toLocaleString()}
-                                    </td>
+                                    <th className="p-3">Date</th>
 
-                                    <td className="p-3">
+                                    <th className="p-3">Report</th>
 
-                                        <button
-                                            onClick={() => handleDelete(item.id)}
-                                            className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full transition"
-                                        >
-                                            <FaTrash />
-                                        </button>
-
-                                    </td>
+                                    <th className="p-3">Action</th>
 
                                 </tr>
 
-                            ))}
+                            </thead>
 
-                        </tbody>
+                            <tbody>
 
-                    </table>
+                                {
 
-                </div>
+                                    filteredHistory.map((item) => (
 
-            )}
+                                        <tr
+                                            key={item.id}
+                                            className="text-center border-b hover:bg-gray-100 transition"
+                                        >
+
+                                            <td className="p-3 font-medium">
+
+                                                {item.image_name}
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                <span
+                                                    className={`px-3 py-1 rounded-full text-white text-sm font-semibold ${
+                                                        item.prediction === "Crack"
+                                                            ? "bg-red-500"
+                                                            : "bg-green-500"
+                                                    }`}
+                                                >
+
+                                                    {item.prediction}
+
+                                                </span>
+
+                                            </td>
+
+                                            <td className="p-3 font-semibold text-blue-600">
+
+                                                {item.confidence.toFixed(2)}%
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {item.model_name}
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {item.structure_type}
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {new Date(item.created_at).toLocaleString()}
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                <button
+
+                                                    onClick={() =>
+                                                        handleDownload(
+                                                            item.id,
+                                                            item.image_name
+                                                        )
+                                                    }
+
+                                                    className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full transition"
+
+                                                >
+
+                                                    <FaDownload />
+
+                                                </button>
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                <button
+
+                                                    onClick={() =>
+                                                        handleDelete(item.id)
+                                                    }
+
+                                                    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full transition"
+
+                                                >
+
+                                                    <FaTrash />
+
+                                                </button>
+
+                                            </td>
+
+                                        </tr>
+
+                                    ))
+
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                )
+
+            }
 
         </div>
+
     );
+
 }
 
 export default History;

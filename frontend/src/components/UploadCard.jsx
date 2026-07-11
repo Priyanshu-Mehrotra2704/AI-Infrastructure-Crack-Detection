@@ -4,17 +4,20 @@ function UploadCard({
     setPreview
 }) {
 
-    const handleChange = (e) => {
+    const handleFileChange = (e) => {
 
-        const selectedFile = e.target.files[0];
+        const selectedFiles = Array.from(e.target.files);
 
-        if (!selectedFile) return;
+        setFile(selectedFiles);
 
-        setFile(selectedFile);
+        const imagePreviews = selectedFiles.map((file) =>
 
-        setPreview(
-            URL.createObjectURL(selectedFile)
+            URL.createObjectURL(file)
+
         );
+
+        setPreview(imagePreviews);
+
     };
 
     return (
@@ -52,8 +55,9 @@ function UploadCard({
                 <input
                     type="file"
                     accept="image/*"
+                    multiple
                     className="hidden"
-                    onChange={handleChange}
+                    onChange={handleFileChange}
                 />
 
                 <span className="text-5xl mb-4">
@@ -74,24 +78,27 @@ function UploadCard({
 
             </label>
 
-            {preview && (
+            <div className="grid grid-cols-2 gap-4 mt-4">
 
-                <div className="mt-6">
+                {
+                    preview.map((image, index) => (
 
-                    <img
-                        src={preview}
-                        alt="Preview"
-                        className="
-                        rounded-xl
-                        shadow-md
-                        w-full
-                        object-cover
-                        max-h-96"
-                    />
+                        <img
 
-                </div>
+                            key={index}
 
-            )}
+                            src={image}
+
+                            alt="preview"
+
+                            className="rounded-xl h-32 w-full object-cover"
+
+                        />
+
+                    ))
+                }
+
+            </div>
 
         </div>
 

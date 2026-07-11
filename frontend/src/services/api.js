@@ -15,3 +15,8 @@ export const deleteHistory = (id) =>
 
 export const getDashboardStats = () =>
     API.get("/dashboard/stats");
+
+export const downloadReport = (id) =>
+    API.get(`/report/${id}`, {
+        responseType: "blob"
+    });
