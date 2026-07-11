@@ -8,6 +8,7 @@ import History from "../components/History";
 import StatsCard from "../components/StatsCard";
 import PieChartCard from "../components/Charts/PieChartCard";
 import BarChartCard from "../components/Charts/BarChartCard";
+import WeeklyTrendChart from "../components/Charts/WeeklyTrendChart";
 
 import {
     predictImage,
@@ -15,10 +16,21 @@ import {
 } from "../services/api";
 
 import {
+
     FaChartBar,
+
     FaBug,
+
     FaCheckCircle,
-    FaRobot
+
+    FaRobot,
+
+    FaFire,
+
+    FaBullseye,
+
+    FaCalendarDay
+
 } from "react-icons/fa";
 
 function Dashboard() {
@@ -31,10 +43,21 @@ function Dashboard() {
     const [refreshHistory, setRefreshHistory] = useState(false);
 
     const [stats, setStats] = useState({
+
         total: 0,
+
         crack: 0,
+
         no_crack: 0,
-        accuracy: 0
+
+        accuracy: 0,
+
+        average_confidence: 0,
+
+        highest_confidence: 0,
+
+        today_inspections: 0
+
     });
 
     const fetchDashboardStats = async () => {
@@ -128,7 +151,7 @@ function Dashboard() {
 
                 {/* Statistics */}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-10">
 
                     <StatsCard
                         title="Total Inspections"
@@ -157,6 +180,26 @@ function Dashboard() {
                         icon={<FaRobot />}
                         color="bg-purple-600"
                     />
+                    <StatsCard
+                        title="Avg Confidence"
+                        value={`${stats.average_confidence}%`}
+                        icon={<FaBullseye />}
+                        color="bg-gradient-to-r from-cyan-500 to-cyan-700"
+                    />
+
+                    <StatsCard
+                        title="Highest Confidence"
+                        value={`${stats.highest_confidence}%`}
+                        icon={<FaFire />}
+                        color="bg-gradient-to-r from-orange-500 to-red-600"
+                    />
+
+                    <StatsCard
+                        title="Today's Inspections"
+                        value={stats.today_inspections}
+                        icon={<FaCalendarDay />}
+                        color="bg-gradient-to-r from-indigo-500 to-purple-700"
+                    />
 
                 </div>
 
@@ -165,7 +208,7 @@ function Dashboard() {
 
                     <PieChartCard stats={stats} />
 
-                    <BarChartCard stats={stats} />
+                    <WeeklyTrendChart stats={stats} />
 
                 </div>
 

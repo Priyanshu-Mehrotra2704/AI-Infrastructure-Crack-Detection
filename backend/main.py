@@ -2,6 +2,7 @@ import os
 import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
+from model_loader import MODELS
 from fastapi import FastAPI, UploadFile, File, Depends
 from sqlalchemy.orm import Session
 from database import get_db
@@ -35,7 +36,10 @@ async def predict(file: UploadFile = File(...), db: Session = Depends(get_db)):
     img = cv2.resize(img, (IMG_SIZE, IMG_SIZE))
     img = img.astype("float32") / 255.0
     img = np.expand_dims(img, axis=0)
-    prediction = model.predict(img, verbose=0)
+    prediction = MODELS["Pavement"].predict(
+        img,
+        verbose=0
+    )
     confidence = float(prediction[0][0])
     if confidence >= 0.5:
         result = "Crack"

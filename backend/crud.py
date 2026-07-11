@@ -92,6 +92,22 @@ def get_dashboard_stats(db: Session):
         .count()
     )
     
+    weekly_inspections = []
+
+    for i in range(6, -1, -1):
+
+        day = today - timedelta(days=i)
+
+        count = (
+            db.query(InspectionHistory).filter(func.date(InspectionHistory.created_at) == day).count())
+
+        weekly_inspections.append({
+
+            "day": day.strftime("%a"),
+
+            "count": count
+
+        })
     return {
         "total" : total,
         "crack": crack,
@@ -101,5 +117,6 @@ def get_dashboard_stats(db: Session):
 
         "highest_confidence": round(max_confidence, 2),
 
-        "today_inspections": today_count
+        "today_inspections": today_count,
+        "weekly_inspections": weekly_inspections
     }
