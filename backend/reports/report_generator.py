@@ -1,7 +1,19 @@
-from reportlab.platypus import SimpleDocTemplate
-from reportlab.platypus import Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
 import os
+
+from datetime import datetime
+
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+    Image
+)
+
+from reportlab.lib import colors
+
+from reportlab.lib.styles import getSampleStyleSheet
 
 styles = getSampleStyleSheet()
 
@@ -10,53 +22,193 @@ def generate_report(data):
 
     os.makedirs("generated_reports", exist_ok=True)
 
-    filename = f"generated_reports/{data['filename']}.pdf"
+    filename = f"generated_reports/report_{data['id']}.pdf"
 
     pdf = SimpleDocTemplate(filename)
 
     elements = []
 
-    elements.append(
-        Paragraph(
-            "<b>AI Infrastructure Crack Detection Report</b>",
-            styles["Title"]
-        )
+    # -------------------- Title --------------------
+
+    title = Paragraph(
+        "<font size='22'><b>AI Infrastructure Crack Detection</b></font>",
+        styles["Title"]
     )
 
-    elements.append(
-        Paragraph(
-            f"<b>Image:</b> {data['filename']}",
-            styles["Normal"]
-        )
+    subtitle = Paragraph(
+        "<font size='16'>Inspection Report</font>",
+        styles["Heading2"]
     )
 
-    elements.append(
-        Paragraph(
-            f"<b>Prediction:</b> {data['prediction']}",
-            styles["Normal"]
+    elements.append(title)
+    elements.append(subtitle)
+    elements.append(Spacer(1, 20))
+
+    # -------------------- Report Info --------------------
+
+    report_info = [
+
+        ["Report ID", data.get("id", "N/A")],
+
+        ["Generated On", datetime.now().strftime("%d %B %Y %I:%M %p")]
+
+    ]
+
+    info_table = Table(report_info, colWidths=[150, 250])
+
+    info_table.setStyle(TableStyle([
+
+        ("GRID", (0,0), (-1,-1), 1, colors.grey),
+
+        ("BACKGROUND", (0,0), (0,-1), colors.lightgrey),
+
+        ("BOTTOMPADDING", (0,0), (-1,-1), 8),
+
+        ("TOPPADDING", (0,0), (-1,-1), 8),
+
+        ("FONTNAME", (0,0), (-1,-1), "Helvetica-Bold")
+
+    ]))
+
+    elements.append(info_table)
+
+    elements.append(Spacer(1,20))
+
+    # -------------------- Image --------------------
+
+    if os.path.exists(data["image_path"]):
+
+        image = Image(
+            data["image_path"],
+            width=280,
+            height=200
         )
-    )
+
+        elements.append(image)
+
+        elements.append(Spacer(1,20))
+
+    # -------------------- Details --------------------
+
+    details = [
+
+        ["Image Name", data["filename"]],
+
+        ["Prediction", data["prediction"]],
+
+        ["Confidence", f"{data['confidence']} %"],
+
+        ["Structure", data["structure"]],
+
+        ["Model", data["model_name"]],
+
+        ["Inspection Status", "Completed"]
+
+    ]
+
+    table = Table(details, colWidths=[150,250])
+
+    table.setStyle(TableStyle([
+
+        ("GRID",(0,0),(-1,-1),1,colors.black),
+
+        ("BACKGROUND",(0,0),(0,-1),colors.HexColor("#D6EAF8")),
+
+        ("BOTTOMPADDING",(0,0),(-1,-1),10),
+
+        ("TOPPADDING",(0,0),(-1,-1),10),
+
+        ("FONTNAME",(0,0),(-1,-1),"Helvetica")
+
+    ]))
+
+    elements.append(table)
+
+    elements.append(Spacer(1,20))
+
+    # -------------------- Remarks --------------------
+
+    remarks = "No crack detected. No immediate maintenance required."
+
+    if data["prediction"] == "Crack":
+
+        remarks = (
+            "Crack detected. Immediate physical inspection "
+            "and preventive maintenance are recommended."
+        )
 
     elements.append(
+
         Paragraph(
-            f"<b>Confidence:</b> {data['confidence']}%",
-            styles["Normal"]
+
+            f"<b>Remarks:</b> {remarks}",
+
+            styles["BodyText"]
+
         )
+
     )
 
-    elements.append(
-        Paragraph(
-            f"<b>Structure:</b> {data['structure']}",
-            styles["Normal"]
-        )
-    )
+    elements.append(Spacer(1,20))
+
+    # -------------------- Disclaimer --------------------
 
     elements.append(
+
         Paragraph(
-            f"<b>Model:</b> {data['model_name']}",
-            styles["Normal"]
+
+            "<b>Disclaimer:</b> This report is generated automatically "
+            "using an AI model and should be verified by a qualified engineer.",
+
+            styles["Italic"]
+
         )
+
     )
+
+    elements.append(Spacer(1,40))
+
+    # -------------------- Signature --------------------
+
+    elements.append(
+
+        Paragraph(
+
+            "<b>Inspector Signature</b>",
+
+            styles["Normal"]
+
+        )
+
+    )
+
+    elements.append(Spacer(1,25))
+
+    elements.append(
+
+        Paragraph(
+
+            "______________________________",
+
+            styles["Normal"]
+
+        )
+
+    )
+
+    elements.append(Spacer(1,30))
+
+    # -------------------- Footer --------------------
+
+    footer = Paragraph(
+
+        "<font size='10'><b>Generated by AI Infrastructure Crack Detection Platform</b></font>",
+
+        styles["Normal"]
+
+    )
+
+    elements.append(footer)
 
     pdf.build(elements)
 

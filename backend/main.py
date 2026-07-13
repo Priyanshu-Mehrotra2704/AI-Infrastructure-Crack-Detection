@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 from reports.report_generator import generate_report
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-
+import os
 from database import get_db
 from crud import (
     create_inspection,
@@ -55,6 +55,17 @@ async def predict(
     for file in files:
 
         contents = await file.read()
+        UPLOAD_DIR = "uploaded_images"
+
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+        image_path = os.path.join(
+            UPLOAD_DIR,
+            file.filename
+        )
+
+        with open(image_path, "wb") as f:
+            f.write(contents)
 
         nparr = np.frombuffer(contents, np.uint8)
 
@@ -176,6 +187,7 @@ def download_report(
         }
 
     data = {
+        "id" : inspection.id,
 
         "filename": inspection.image_name,
 
