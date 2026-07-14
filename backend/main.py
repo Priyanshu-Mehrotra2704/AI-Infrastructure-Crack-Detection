@@ -6,7 +6,9 @@ from fastapi.responses import FileResponse
 from reports.report_generator import generate_report
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from gradcam.gradcam import (make_gradcam_heatmap,save_gradcam)
 import os
+from fastapi.staticfiles import StaticFiles
 from database import get_db
 from crud import (
     create_inspection,
@@ -17,6 +19,14 @@ from crud import (
 from model_loader import MODELS
 
 app = FastAPI()
+
+os.makedirs("gradcam/generated_heatmaps", exist_ok=True)
+
+app.mount(
+    "/generated_heatmaps",
+    StaticFiles(directory="gradcam/generated_heatmaps"),
+    name="generated_heatmaps"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -44,7 +54,6 @@ async def predict(
 ):
 
     selected_model = MODELS.get(model)
-
     if selected_model is None:
         return {
             "error": "Invalid model selected."
@@ -82,10 +91,28 @@ async def predict(
 
         img = np.expand_dims(img, axis=0)
 
-        prediction = selected_model.predict(
-            img,
-            verbose=0
-        )
+        prediction = selected_model.predict(img,verbose=0)
+        # -------- GradCAM Disabled --------
+
+        heatmap = None
+
+        heatmap_path = None
+
+        # heatmap = make_gradcam_heatmap(img, selected_model)
+
+        # name = os.path.splitext(file.filename)[0]
+
+        # heatmap_path = os.path.join(
+        #     "gradcam",
+        #     "generated_heatmaps",
+        #     f"{name}_heatmap.jpg"
+        # )
+
+        # save_gradcam(
+        #     image_path,
+        #     heatmap,
+        #     heatmap_path
+        # )
 
         confidence = float(prediction[0][0])
 
@@ -111,9 +138,10 @@ async def predict(
 
             confidence=confidence,
 
-            model_name="EfficientNetB0",
+            model_name="CNN",
 
-            structure_type=model
+            structure_type=model,
+            
 
         )
 
@@ -127,7 +155,8 @@ async def predict(
 
             "structure": model,
 
-            "model_name": "EfficientNetB0"
+            "model_name": "CNN",
+            "heatmap": None
 
         })
 
@@ -187,18 +216,16 @@ def download_report(
         }
 
     data = {
-        "id" : inspection.id,
-
+        "id": inspection.id,
         "filename": inspection.image_name,
-
         "prediction": inspection.prediction,
-
         "confidence": inspection.confidence,
-
         "structure": inspection.structure_type,
-
-        "model_name": inspection.model_name
-
+        "model_name": inspection.model_name,
+        "image_path": os.path.join(
+            "uploaded_images",
+            inspection.image_name
+        )
     }
 
     pdf_path = generate_report(data)

@@ -36,3 +36,9 @@ MODELS = {
     )
 
 }
+print("\nLoaded Model Layers:\n")
+
+model = MODELS["Pavement"]
+
+for layer in model.layers:
+    print(layer.name)
