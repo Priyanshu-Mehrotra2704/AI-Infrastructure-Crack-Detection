@@ -5,8 +5,9 @@ from fastapi import FastAPI, UploadFile, File, Depends, Form
 from fastapi.responses import FileResponse
 from reports.report_generator import generate_report
 from fastapi.middleware.cors import CORSMiddleware
+from auth.auth_routes import router as auth_router
 from sqlalchemy.orm import Session
-from gradcam.gradcam import (make_gradcam_heatmap,save_gradcam)
+# from gradcam.gradcam import (make_gradcam_heatmap,save_gradcam)
 import os
 from fastapi.staticfiles import StaticFiles
 from database import get_db
@@ -17,8 +18,13 @@ from crud import (
     get_dashboard_stats
 )
 from model_loader import MODELS
+from database import Base, engine
+import models
 
+Base.metadata.create_all(bind=engine)
 app = FastAPI()
+
+app.include_router(auth_router)
 
 os.makedirs("gradcam/generated_heatmaps", exist_ok=True)
 
