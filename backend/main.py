@@ -11,6 +11,8 @@ from sqlalchemy.orm import Session
 import os
 from fastapi.staticfiles import StaticFiles
 from database import get_db
+from auth.jwt_handler import get_current_user
+from models import User
 from crud import (
     create_inspection,
     get_all_inspections,
@@ -56,7 +58,8 @@ def home():
 async def predict(
     files: list[UploadFile] = File(...),
     model: str = Form(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
 
     selected_model = MODELS.get(model)
@@ -176,14 +179,22 @@ async def predict(
 
 
 @app.get("/history/")
-def history(db: Session = Depends(get_db)):
+def history(
+
+    db: Session = Depends(get_db),
+
+    current_user: User = Depends(get_current_user)
+
+):
+
     return get_all_inspections(db)
 
 
 @app.delete("/history/{inspection_id}/")
 def delete_history(
     inspection_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
 
     inspection = delete_inspection(db, inspection_id)
@@ -200,13 +211,17 @@ def delete_history(
 
 
 @app.get("/dashboard/stats")
-def dashboard_stats(db: Session = Depends(get_db)):
+def dashboard_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     return get_dashboard_stats(db)
 
 @app.get("/report/{inspection_id}")
 def download_report(
     inspection_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
 
     inspection = (
