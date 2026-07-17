@@ -3,7 +3,7 @@ import os
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Cookie
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
@@ -18,9 +18,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(
     os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
 )
 
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="auth/login"
-)
 
 def create_access_token(data: dict):
 
@@ -46,7 +43,7 @@ def create_access_token(data: dict):
 
 def get_current_user(
 
-    token: str = Depends(oauth2_scheme),
+    token: str = Cookie(None, alias="access_token"),
 
     db: Session = Depends(get_db)
 

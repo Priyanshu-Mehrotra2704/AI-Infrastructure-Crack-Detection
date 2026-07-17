@@ -1,12 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from database import get_db
 from models import User
 from schemas import UserRegister, UserLogin
 from auth.hashing import hash_password, verify_password
-from auth.jwt_handler import create_access_token
-
+from auth.jwt_handler import create_access_token,get_current_user
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
@@ -93,14 +92,12 @@ def register_user(
     }
 # Login 
 @router.post("/login")
+@router.post("/login")
 def login_user(
-
+    response: Response,
     user: UserLogin,
-
     db: Session = Depends(get_db)
-
 ):
-
     existing_user = (
 
         db.query(User)
@@ -147,10 +144,38 @@ def login_user(
 
     )
 
+    response.set_cookie(
+
+    key="access_token",
+
+    value=access_token,
+
+    httponly=True,
+
+    secure=False,        # localhost ke liye False
+
+    samesite="lax",
+
+    max_age=60 * 60
+
+    )
+
+    return {
+    "message": "Login successful"
+    }
+@router.get("/me")
+def get_me(
+
+    current_user: User = Depends(get_current_user)
+
+):
+
     return {
 
-        "access_token": access_token,
+        "id": current_user.id,
 
-        "token_type": "bearer"
+        "username": current_user.username,
+
+        "email": current_user.email
 
     }
