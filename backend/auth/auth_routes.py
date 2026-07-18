@@ -91,7 +91,7 @@ def register_user(
 
     }
 # Login 
-@router.post("/login")
+
 @router.post("/login")
 def login_user(
     response: Response,
@@ -178,4 +178,15 @@ def get_me(
 
         "email": current_user.email
 
+    }
+
+@router.post("/logout")
+def logout(response: Response):
+
+    response.delete_cookie(
+        key="access_token"
+    )
+
+    return {
+        "message": "Logged out successfully."
     }

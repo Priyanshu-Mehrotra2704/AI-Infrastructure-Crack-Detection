@@ -10,7 +10,8 @@ def create_inspection(
     prediction: str,
     confidence: float,
     model_name: str,
-    structure_type: str
+    structure_type: str,
+    user_id: int
 ):
 
     inspection = InspectionHistory(
@@ -23,7 +24,9 @@ def create_inspection(
 
         model_name=model_name,
 
-        structure_type=structure_type
+        structure_type=structure_type,
+
+        user_id = user_id
 
     )
 
@@ -36,25 +39,33 @@ def create_inspection(
     return inspection
 
 
-def get_all_inspections(db: Session):
+def get_all_inspections(
+    db: Session,
+    user_id: int
+):
 
-    return db.query(
-        InspectionHistory
-    ).order_by(
-        InspectionHistory.created_at.desc()
-    ).all()
+    return (
+        db.query(InspectionHistory)
+        .filter(InspectionHistory.user_id == user_id)
+        .order_by(InspectionHistory.created_at.desc())
+        .all()
+    )
 
 
 def delete_inspection(
     db: Session,
-    inspection_id: int
+    inspection_id: int,
+    user_id: int
 ):
 
-    inspection = db.query(
-        InspectionHistory
-    ).filter(
-        InspectionHistory.id == inspection_id
-    ).first()
+    inspection = (
+        db.query(InspectionHistory)
+        .filter(
+            InspectionHistory.id == inspection_id,
+            InspectionHistory.user_id == user_id
+        )
+        .first()
+    )
 
     if inspection:
 
@@ -63,19 +74,23 @@ def delete_inspection(
         db.commit()
 
     return inspection
-def get_dashboard_stats(db: Session):
-    total = db.query(InspectionHistory).count()
-    crack = db.query(InspectionHistory).filter(InspectionHistory.prediction == "Crack").count()
-    no_crack = db.query(InspectionHistory).filter(InspectionHistory.prediction == "No Crack").count()
+def get_dashboard_stats(
+    db: Session,
+    user_id: int
+):
+    total = (db.query(InspectionHistory).filter(InspectionHistory.user_id == user_id).count())
+    crack = (db.query(InspectionHistory).filter(InspectionHistory.user_id == user_id,InspectionHistory.prediction == "Crack").count())
+    no_crack = (db.query(InspectionHistory).filter(InspectionHistory.user_id == user_id,InspectionHistory.prediction == "No Crack").count())
+    
     accuracy = 0
     if (total > 0):
         accuracy = round(max(crack,no_crack)/total * 100, 2)
-    avg_confidence = (db.query(func.avg(InspectionHistory.confidence))).scalar()
+    avg_confidence = db.query(func.avg(InspectionHistory.confidence)).filter(InspectionHistory.user_id == user_id).scalar()
     if avg_confidence is None:
         avg_confidence = 0
 
     max_confidence = (
-        db.query(func.max(InspectionHistory.confidence))
+        db.query(func.max(InspectionHistory.confidence)).filter(InspectionHistory.user_id == user_id)
         .scalar()
     )
 
@@ -87,6 +102,7 @@ def get_dashboard_stats(db: Session):
     today_count = (
         db.query(InspectionHistory)
         .filter(
+            InspectionHistory.user_id == user_id,
             func.date(InspectionHistory.created_at) == today
         )
         .count()
@@ -99,7 +115,7 @@ def get_dashboard_stats(db: Session):
         day = today - timedelta(days=i)
 
         count = (
-            db.query(InspectionHistory).filter(func.date(InspectionHistory.created_at) == day).count())
+            db.query(InspectionHistory).filter(InspectionHistory.user_id == user_id,func.date(InspectionHistory.created_at) == day).count())
 
         weekly_inspections.append({
 

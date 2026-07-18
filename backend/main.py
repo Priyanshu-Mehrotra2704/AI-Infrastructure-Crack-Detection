@@ -7,6 +7,7 @@ from reports.report_generator import generate_report
 from fastapi.middleware.cors import CORSMiddleware
 from auth.auth_routes import router as auth_router
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 # from gradcam.gradcam import (make_gradcam_heatmap,save_gradcam)
 import os
 from fastapi.staticfiles import StaticFiles
@@ -156,6 +157,7 @@ async def predict(
 
             structure_type=model,
             
+            user_id=current_user.id
 
         )
 
@@ -192,7 +194,7 @@ def history(
 
 ):
 
-    return get_all_inspections(db)
+    return get_all_inspections(db,current_user.id)
 
 
 @app.delete("/history/{inspection_id}/")
@@ -202,13 +204,14 @@ def delete_history(
     current_user: User = Depends(get_current_user)
 ):
 
-    inspection = delete_inspection(db, inspection_id)
+    inspection = delete_inspection(db, inspection_id,current_user.id)
 
     if inspection is None:
 
-        return {
-            "message": "Inspection not found"
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="Inspection not found."
+        )
 
     return {
         "message": "Deleted Successfully"
@@ -220,7 +223,7 @@ def dashboard_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return get_dashboard_stats(db)
+    return get_dashboard_stats(db,current_user.id)
 
 @app.get("/report/{inspection_id}")
 def download_report(
@@ -231,7 +234,9 @@ def download_report(
 
     inspection = (
         db.query(InspectionHistory)
-        .filter(InspectionHistory.id == inspection_id)
+        .filter(InspectionHistory.id == inspection_id,
+                InspectionHistory.user_id == current_user.id
+        )
         .first()
     )
 
