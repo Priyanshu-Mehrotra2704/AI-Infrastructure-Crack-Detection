@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
@@ -152,7 +154,7 @@ def login_user(
 
     httponly=True,
 
-    secure=False,        # localhost ke liye False
+    secure=os.getenv("COOKIE_SECURE", "False") == "True",   # set COOKIE_SECURE=True in prod (HTTPS)
 
     samesite="lax",
 

@@ -1,0 +1,6 @@
+**/__pycache__
+**/*.pyc
+.env
+uploaded_images
+generated_reports
+gradcam/generated_heatmaps

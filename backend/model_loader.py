@@ -11,7 +11,7 @@ MODELS = {
             "..",
             "ai-model",
             "models",
-            "best_model.keras"
+            "best_model2.keras"
         )
     ),
 
@@ -21,7 +21,7 @@ MODELS = {
             "..",
             "ai-model",
             "models",
-            "best_model.keras"
+            "best_model2.keras"
         )
     ),
 
@@ -31,7 +31,7 @@ MODELS = {
             "..",
             "ai-model",
             "models",
-            "best_model.keras"
+            "best_model2.keras"
         )
     )
 
@@ -40,5 +40,3 @@ print("\nLoaded Model Layers:\n")
 
 model = MODELS["Pavement"]
 
-for layer in model.layers:
-    print(layer.name)

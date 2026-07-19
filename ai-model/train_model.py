@@ -29,7 +29,7 @@ model.compile(
 )
 X_train, X_test, y_train, y_test =load_dataset()
 checkpoint = tf.keras.callbacks.ModelCheckpoint(
-    "models/best_model1.keras",
+    "models/best_model2.keras",
     monitor="val_accuracy",
     save_best_only=True
 )

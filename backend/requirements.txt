@@ -1,0 +1,39 @@
+fastapi
+uvicorn[standard]
+
+# Database
+sqlalchemy
+psycopg2-binary
+
+# Authentication
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+
+# Environment Variables
+python-dotenv
+
+# ML / AI
+tensorflow
+numpy
+opencv-python
+pillow
+
+# Data Processing
+pandas
+matplotlib
+
+# API
+python-multipart
+
+# CORS
+starlette
+
+# PDF Report
+reportlab
+
+# Image Processing
+scikit-image
+
+# Utilities
+requests
