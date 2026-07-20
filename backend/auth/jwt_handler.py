@@ -57,6 +57,10 @@ def get_current_user(
 
     )
 
+    if token is None:
+
+        raise credentials_exception
+
     try:
 
         payload = jwt.decode(

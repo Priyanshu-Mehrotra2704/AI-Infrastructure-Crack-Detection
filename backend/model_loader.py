@@ -11,7 +11,7 @@ MODELS = {
             "..",
             "ai-model",
             "models",
-            "best_model2.keras"
+            "best_model3.keras"
         )
     ),
 
@@ -21,7 +21,7 @@ MODELS = {
             "..",
             "ai-model",
             "models",
-            "best_model2.keras"
+            "best_model3.keras"
         )
     ),
 
@@ -31,7 +31,7 @@ MODELS = {
             "..",
             "ai-model",
             "models",
-            "best_model2.keras"
+            "best_model3.keras"
         )
     )
 
