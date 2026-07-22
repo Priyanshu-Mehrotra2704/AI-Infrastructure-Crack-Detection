@@ -1,48 +1,50 @@
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D
-from tensorflow.keras.layers import Flatten, Dense
-from tensorflow.keras.layers import RandomFlip, RandomRotation, RandomZoom
-from wall_data_pipeline import load_dataset
-from tensorflow.keras.layers import BatchNormalization, Dropout
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.layers import (
+    Input, RandomFlip, RandomRotation, RandomZoom,
+    RandomBrightness, RandomContrast, Rescaling,
+    GlobalAveragePooling2D, Dense, Dropout
+)
+from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.optimizers import Adam
+from wall_data_pipeline import load_dataset
 
-model = Sequential([
-    # Data augmentation — chhote dataset ko "effectively" bada dikhata hai,
-    # sirf training ke time active rehta hai, inference pe skip ho jaata hai
-    RandomFlip("horizontal", input_shape=(224, 224, 3)),
-    RandomRotation(0.1),
-    RandomZoom(0.1),
+X_train, X_test, y_train, y_test = load_dataset()
 
-    Conv2D(32, (3,3), activation="relu", name="conv1"),
-    BatchNormalization(momentum=0.9),
-    MaxPooling2D(),
+# ---- Base model: MobileNetV2 pretrained on ImageNet ----
+base_model = MobileNetV2(
+    input_shape=(224, 224, 3),
+    include_top=False,
+    weights="imagenet"
+)
+base_model.trainable = False   # freeze for phase 1
 
-    Conv2D(64, (3,3), activation="relu", name="conv2"),
-    BatchNormalization(momentum=0.9),
-    MaxPooling2D(),
+inputs = Input(shape=(224, 224, 3))
 
-    Conv2D(128, (3,3), activation="relu", name ="conv3"),
-    BatchNormalization(momentum=0.9),
-    MaxPooling2D(),
+# Augmentation (training ke time hi active, inference pe skip)
+x = RandomFlip("horizontal")(inputs)
+x = RandomRotation(0.1)(x)
+x = RandomZoom(0.1)(x)
+x = RandomBrightness(0.1)(x)
+x = RandomContrast(0.1)(x)
 
-    Conv2D(256, (3,3), activation="relu", name = "last_conv_layer"),
-    BatchNormalization(momentum=0.9),
-    MaxPooling2D(),
+# wall_data_pipeline.py images ko [0,1] range me deta hai;
+# MobileNetV2 [-1,1] range expect karta hai, isliye rescale
+x = Rescaling(scale=2.0, offset=-1)(x)
 
-    Flatten(),
+x = base_model(x, training=False)
+x = GlobalAveragePooling2D()(x)
+x = Dense(128, activation="relu")(x)
+x = Dropout(0.5)(x)
+outputs = Dense(1, activation="sigmoid")(x)
 
-    Dense(128, activation="relu"),
-    Dropout(0.5),
-    Dense(1, activation="sigmoid")
-])
+model = Model(inputs, outputs)
 
 model.compile(
     optimizer=Adam(learning_rate=0.0001),
     loss="binary_crossentropy",
     metrics=["accuracy"]
 )
-X_train, X_test, y_train, y_test = load_dataset()
 
 checkpoint = tf.keras.callbacks.ModelCheckpoint(
     "models/wall_best_model.keras",
@@ -56,13 +58,39 @@ early_stop = tf.keras.callbacks.EarlyStopping(
     restore_best_weights=True
 )
 
+reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
+    monitor="val_loss",
+    factor=0.5,
+    patience=3,
+    min_lr=1e-6
+)
+
+# ---- Phase 1: train only the new top layers (base frozen) ----
 model.fit(
     X_train, y_train,
-    epochs=30,
+    epochs=15,
     batch_size=32,
     validation_data=(X_test, y_test),
     verbose=2,
-    callbacks=[checkpoint, early_stop]
+    callbacks=[checkpoint, early_stop, reduce_lr]
+)
+
+# ---- Phase 2: unfreeze base model, fine-tune with a tiny learning rate ----
+base_model.trainable = True
+
+model.compile(
+    optimizer=Adam(learning_rate=1e-5),
+    loss="binary_crossentropy",
+    metrics=["accuracy"]
+)
+
+model.fit(
+    X_train, y_train,
+    epochs=15,
+    batch_size=32,
+    validation_data=(X_test, y_test),
+    verbose=2,
+    callbacks=[checkpoint, early_stop, reduce_lr]
 )
 
 model.save("models/wall_model.keras")
