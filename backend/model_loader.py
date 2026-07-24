@@ -21,7 +21,7 @@ MODELS = {
             "..",
             "ai-model",
             "models",
-            "best_model3.keras"
+            "wall_best_model.keras"
         )
     ),
 

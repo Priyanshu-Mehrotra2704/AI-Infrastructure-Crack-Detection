@@ -22,7 +22,7 @@ def generate_report(data):
 
     os.makedirs("generated_reports", exist_ok=True)
 
-    filename = f"generated_reports/report_{data['id']}.pdf"
+    filename = f"generated_reports/report_{data['id']}[0:-5].pdf"
 
     pdf = SimpleDocTemplate(filename)
 
