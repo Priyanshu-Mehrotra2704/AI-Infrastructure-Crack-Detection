@@ -31,12 +31,10 @@ MODELS = {
             "..",
             "ai-model",
             "models",
-            "best_model3.keras"
+            "deck_best_model_focal.keras"
         )
     )
 
 }
-print("\nLoaded Model Layers:\n")
 
-model = MODELS["Pavement"]
 

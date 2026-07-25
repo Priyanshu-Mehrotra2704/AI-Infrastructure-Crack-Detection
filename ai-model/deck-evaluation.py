@@ -1,24 +1,22 @@
 import numpy as np
 from tensorflow.keras.models import load_model
 from sklearn.metrics import classification_report, confusion_matrix
-
+import os
 from deck_data_pipeline import load_dataset
 
-# =====================================================
-# Load Dataset (same split as training, same SEED, so
-# X_test / y_test here match what the model was validated
-# on during training)
-# =====================================================
+
 
 X_train, X_test, y_train, y_test = load_dataset()
 
 # =====================================================
 # Load Trained Model
 # =====================================================
-# Point this at whichever saved file you want to evaluate:
-#   - "models/deck_best_model.keras"  -> best checkpoint (by val_loss)
-#   - "models/deck_model.keras"       -> final model after Phase 2
-MODEL_PATH = "models/deck_best_model_focal.keras"
+  
+MODEL_PATH = os.path.join(
+            "ai-model",
+            "models",
+            "deck_best_model.keras"
+        )
 
 model = load_model(MODEL_PATH)
 print(f"Loaded model from: {MODEL_PATH}")
