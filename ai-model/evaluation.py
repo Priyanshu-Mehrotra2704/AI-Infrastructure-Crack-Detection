@@ -2,7 +2,7 @@ import numpy as np
 from tensorflow.keras.models import load_model
 from sklearn.metrics import classification_report, confusion_matrix
 import os
-from deck_data_pipeline import load_dataset
+from wall_data_pipeline import load_dataset
 
 
 
@@ -15,7 +15,7 @@ X_train, X_test, y_train, y_test = load_dataset()
 MODEL_PATH = os.path.join(
             "ai-model",
             "models",
-            "deck_best_model.keras"
+            "wall_best_model.keras"
         )
 
 model = load_model(MODEL_PATH)

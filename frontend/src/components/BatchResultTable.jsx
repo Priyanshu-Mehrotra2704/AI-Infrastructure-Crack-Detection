@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 function BatchResultTable({ results }) {
 
     const [selectedHeatmap, setSelectedHeatmap] = useState(null);
@@ -130,9 +132,14 @@ function BatchResultTable({ results }) {
                                             item.heatmap ? (
 
                                                 <img
-                                                    src={item.heatmap}
+                                                    src={`${API_BASE_URL}${item.heatmap}`}
                                                     alt="Heatmap"
-                                                    className="w-28 h-20 rounded-lg border"
+                                                    onClick={() =>
+                                                        setSelectedHeatmap(
+                                                            `${API_BASE_URL}${item.heatmap}`
+                                                        )
+                                                    }
+                                                    className="w-28 h-20 rounded-lg border cursor-pointer hover:opacity-80 transition"
                                                 />
 
                                             ) : (

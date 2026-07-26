@@ -2,12 +2,10 @@ import { useState, useEffect } from "react";
 
 import Navbar from "../components/Navbar";
 import UploadCard from "../components/UploadCard";
-// import ResultCard from "../components/ResultCard";
 import Loader from "../components/Loader";
 import History from "../components/History";
 import StatsCard from "../components/StatsCard";
 import PieChartCard from "../components/Charts/PieChartCard";
-// import BarChartCard from "../components/Charts/BarChartCard";
 import BatchResultTable from "../components/BatchResultTable";
 
 import WeeklyTrendChart from "../components/Charts/WeeklyTrendChart";
@@ -86,7 +84,7 @@ function Dashboard() {
 
     const analyzeImage = async () => {
 
-        if (!file) {
+        if (!file || file.length === 0) {
 
             alert("Please select an image.");
 

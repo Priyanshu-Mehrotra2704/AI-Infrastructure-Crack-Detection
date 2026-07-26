@@ -21,6 +21,12 @@ from crud import (
     get_dashboard_stats
 )
 from model_loader import MODELS
+
+THRESHOLDS = {
+    "Pavement": 0.5,
+    "Wall": 0.5,
+    "Deck": 0.3,
+}
 from database import Base, engine
 import models
 
@@ -134,7 +140,9 @@ async def predict(
 
         confidence = float(prediction[0][0])
 
-        if confidence >= 0.5:
+        threshold = THRESHOLDS.get(model, 0.5)
+
+        if confidence >= threshold:
 
             result = "Crack"
 
