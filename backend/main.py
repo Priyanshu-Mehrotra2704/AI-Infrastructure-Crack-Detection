@@ -22,6 +22,9 @@ from crud import (
 )
 from model_loader import MODELS
 
+# Per-structure decision thresholds — tuned from evaluate_models.py results.
+# Deck's default 0.5 missed too many real cracks (recall was only 0.53),
+# so its threshold is lowered to catch more of them (trade-off: more false alarms).
 THRESHOLDS = {
     "Pavement": 0.5,
     "Wall": 0.5,
@@ -253,9 +256,10 @@ def download_report(
 
     if inspection is None:
 
-        return {
-            "message": "Inspection not found."
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="Inspection not found."
+        )
 
     data = {
         "id": inspection.id,

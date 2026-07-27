@@ -181,7 +181,7 @@ function Dashboard() {
                     />
 
                     <StatsCard
-                        title="Accuracy"
+                        title="Class Distribution"
                         value={`${stats.accuracy}%`}
                         icon={<FaRobot />}
                         color="bg-purple-600"
