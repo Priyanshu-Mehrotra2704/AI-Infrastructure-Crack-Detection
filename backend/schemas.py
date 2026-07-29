@@ -82,3 +82,12 @@ class Token(BaseModel):
 class TokenData(BaseModel):
 
     email: str | None = None
+
+
+# ============================
+# Resend Verification
+# ============================
+
+class ResendVerificationRequest(BaseModel):
+
+    email: EmailStr
