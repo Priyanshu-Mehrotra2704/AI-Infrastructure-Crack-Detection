@@ -159,6 +159,16 @@ def login_user(
 
         )
 
+    if not existing_user.is_verified:
+
+        raise HTTPException(
+
+            status_code=403,
+
+            detail="EMAIL_NOT_VERIFIED"
+
+        )
+
     access_token = create_access_token(
 
         {

@@ -5,6 +5,9 @@ uvicorn[standard]
 sqlalchemy
 psycopg2-binary
 
+# Cache / token store
+redis
+
 # Authentication
 python-jose[cryptography]
 passlib[bcrypt]

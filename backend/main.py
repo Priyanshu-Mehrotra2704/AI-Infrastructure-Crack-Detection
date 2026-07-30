@@ -51,15 +51,14 @@ CORS_ORIGINS = os.getenv(
     "http://localhost:5173"
 ).split(",")
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
-
     allow_methods=["*"],
-
-    allow_headers=["*"]
-
+    allow_headers=["*"],
 )
 
 IMG_SIZE = 224

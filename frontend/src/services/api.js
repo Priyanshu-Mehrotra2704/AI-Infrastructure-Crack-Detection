@@ -48,3 +48,13 @@ export const logoutUser = () =>
 
 export const getCurrentUser = () =>
     API.get("/auth/me");
+
+// ---------- Email Verification ----------
+
+export const verifyEmail = (token) =>
+    API.get("/auth/verify-email", {
+        params: { token }
+    });
+
+export const resendVerification = (email) =>
+    API.post("/auth/resend-verification", { email });

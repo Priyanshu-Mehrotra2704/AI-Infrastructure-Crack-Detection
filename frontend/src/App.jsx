@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
+import VerifyEmail from "./pages/VerifyEmail";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -18,6 +19,11 @@ function App() {
             <Route
                 path="/login"
                 element={<Login />}
+            />
+
+            <Route
+                path="/verify-email"
+                element={<VerifyEmail />}
             />
 
             <Route
