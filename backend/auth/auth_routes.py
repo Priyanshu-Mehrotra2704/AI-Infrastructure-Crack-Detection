@@ -1,6 +1,6 @@
 import os
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response
+from fastapi import APIRouter, BackgroundTasks, Cookie, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -15,6 +15,14 @@ from auth.verification import (
     set_resend_cooldown,
 )
 from auth.email_utils import send_verification_email
+from auth.refresh_token import (
+    create_refresh_token,
+    verify_and_rotate_refresh_token,
+    revoke_refresh_token,
+)
+
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
 
 router = APIRouter(
     prefix="/auth",
@@ -179,6 +187,8 @@ def login_user(
 
     )
 
+    refresh_token = create_refresh_token(existing_user.email)
+
     response.set_cookie(
 
     key="access_token",
@@ -191,7 +201,23 @@ def login_user(
 
     samesite="lax",
 
-    max_age=60 * 60
+    max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
+
+    )
+
+    response.set_cookie(
+
+    key="refresh_token",
+
+    value=refresh_token,
+
+    httponly=True,
+
+    secure=os.getenv("COOKIE_SECURE", "False") == "True",
+
+    samesite="lax",
+
+    max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
 
     )
 
@@ -293,11 +319,78 @@ def get_me(
 
     }
 
+@router.post("/refresh")
+def refresh_access_token(
+    response: Response,
+    refresh_token: str = Cookie(None, alias="refresh_token"),
+):
+
+    if refresh_token is None:
+
+        raise HTTPException(
+            status_code=401,
+            detail="No refresh token found. Please log in again."
+        )
+
+    try:
+        email, new_refresh_token = verify_and_rotate_refresh_token(refresh_token)
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+    new_access_token = create_access_token({"sub": email})
+
+    response.set_cookie(
+
+    key="access_token",
+
+    value=new_access_token,
+
+    httponly=True,
+
+    secure=os.getenv("COOKIE_SECURE", "False") == "True",
+
+    samesite="lax",
+
+    max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
+
+    )
+
+    response.set_cookie(
+
+    key="refresh_token",
+
+    value=new_refresh_token,
+
+    httponly=True,
+
+    secure=os.getenv("COOKIE_SECURE", "False") == "True",
+
+    samesite="lax",
+
+    max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+
+    )
+
+    return {
+        "message": "Token refreshed."
+    }
+
+
 @router.post("/logout")
-def logout(response: Response):
+def logout(
+    response: Response,
+    refresh_token: str = Cookie(None, alias="refresh_token"),
+):
+
+    if refresh_token:
+        revoke_refresh_token(refresh_token)
 
     response.delete_cookie(
         key="access_token"
+    )
+
+    response.delete_cookie(
+        key="refresh_token"
     )
 
     return {

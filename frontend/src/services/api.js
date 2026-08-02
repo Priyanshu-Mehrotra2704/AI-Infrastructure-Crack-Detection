@@ -8,6 +8,52 @@ const API = axios.create({
 
 });
 
+let isRefreshing = false;
+let refreshPromise = null;
+
+API.interceptors.response.use(
+
+    (response) => response,
+
+    async (error) => {
+
+        const originalRequest = error.config;
+
+        const isAuthRoute =
+            originalRequest?.url?.includes("/auth/login") ||
+            originalRequest?.url?.includes("/auth/register") ||
+            originalRequest?.url?.includes("/auth/refresh");
+
+        if (
+            error.response?.status === 401 &&
+            !originalRequest._retry &&
+            !isAuthRoute
+        ) {
+
+            originalRequest._retry = true;
+
+            try {
+
+                if (!isRefreshing) {
+                    isRefreshing = true;
+                    refreshPromise = API.post("/auth/refresh").finally(() => {
+                        isRefreshing = false;
+                    });
+                }
+
+                await refreshPromise;
+
+                return API(originalRequest);
+
+            } catch (refreshError) {
+                return Promise.reject(refreshError);
+            }
+        }
+
+        return Promise.reject(error);
+    }
+);
+
 export default API;
 
 // ---------- Prediction ----------
@@ -49,12 +95,8 @@ export const logoutUser = () =>
 export const getCurrentUser = () =>
     API.get("/auth/me");
 
-// ---------- Email Verification ----------
-
 export const verifyEmail = (token) =>
-    API.get("/auth/verify-email", {
-        params: { token }
-    });
+    API.get(`/auth/verify-email?token=${encodeURIComponent(token)}`);
 
 export const resendVerification = (email) =>
     API.post("/auth/resend-verification", { email });
