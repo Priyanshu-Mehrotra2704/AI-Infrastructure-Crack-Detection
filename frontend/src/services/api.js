@@ -8,6 +8,10 @@ const API = axios.create({
 
 });
 
+// Auto-refresh: if a request fails with 401 (expired access token), try
+// /auth/refresh once (it rotates the refresh token cookie too), then
+// retry the original request. If refresh itself fails, let the 401
+// bubble up as-is (ProtectedRoute will redirect to /login).
 let isRefreshing = false;
 let refreshPromise = null;
 
@@ -88,6 +92,9 @@ export const registerUser = (data) =>
 
 export const loginUser = (data) =>
     API.post("/auth/login", data);
+
+export const loginWithGoogle = (credential) =>
+    API.post("/auth/google", { credential });
 
 export const logoutUser = () =>
     API.post("/auth/logout");

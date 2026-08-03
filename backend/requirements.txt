@@ -5,14 +5,15 @@ uvicorn[standard]
 sqlalchemy
 psycopg2-binary
 
-# Cache / token store
-redis
-
 # Authentication
 python-jose[cryptography]
 passlib[bcrypt]
 bcrypt==4.0.1
 python-multipart
+
+# Email verification (token storage / rate-limit)
+redis
+google-auth
 
 # Environment Variables
 python-dotenv

@@ -85,6 +85,15 @@ class TokenData(BaseModel):
 
 
 # ============================
+# Google Login
+# ============================
+
+class GoogleLoginRequest(BaseModel):
+
+    credential: str
+
+
+# ============================
 # Resend Verification
 # ============================
 

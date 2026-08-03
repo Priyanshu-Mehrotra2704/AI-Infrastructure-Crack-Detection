@@ -1,13 +1,15 @@
 import os
+import secrets
 
 from fastapi import APIRouter, BackgroundTasks, Cookie, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from database import get_db
 from models import User
-from schemas import UserRegister, UserLogin, ResendVerificationRequest
+from schemas import UserRegister, UserLogin, ResendVerificationRequest, GoogleLoginRequest
 from auth.hashing import hash_password, verify_password
 from auth.jwt_handler import create_access_token, get_current_user
+from auth.google_auth import verify_google_token
 from auth.verification import (
     create_verification_token,
     consume_verification_token,
@@ -318,6 +320,94 @@ def get_me(
         "email": current_user.email
 
     }
+
+@router.post("/google")
+def google_login(
+    payload: GoogleLoginRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+
+    try:
+        idinfo = verify_google_token(payload.credential)
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+    email = idinfo["email"]
+    name = idinfo.get("name") or email.split("@")[0]
+
+    user = (
+        db.query(User)
+        .filter(User.email == email)
+        .first()
+    )
+
+    if user is None:
+
+        # Make sure the auto-picked username doesn't collide with an
+        # existing one (username has a unique constraint)
+        base_username = name
+        final_username = base_username
+        suffix = 1
+
+        while db.query(User).filter(User.username == final_username).first():
+            final_username = f"{base_username}{suffix}"
+            suffix += 1
+
+        # Password is unusable (random, never shown to the user) since
+        # they authenticate via Google, not a password
+        random_password = secrets.token_urlsafe(32)
+
+        user = User(
+            username=final_username,
+            email=email,
+            password=hash_password(random_password),
+            is_verified=True,   # Google already verified this email address
+        )
+
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    access_token = create_access_token({"sub": user.email})
+    refresh_token = create_refresh_token(user.email)
+
+    response.set_cookie(
+
+        key="access_token",
+
+        value=access_token,
+
+        httponly=True,
+
+        secure=os.getenv("COOKIE_SECURE", "False") == "True",
+
+        samesite="lax",
+
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
+
+    )
+
+    response.set_cookie(
+
+        key="refresh_token",
+
+        value=refresh_token,
+
+        httponly=True,
+
+        secure=os.getenv("COOKIE_SECURE", "False") == "True",
+
+        samesite="lax",
+
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+
+    )
+
+    return {
+        "message": "Login successful"
+    }
+
 
 @router.post("/refresh")
 def refresh_access_token(
