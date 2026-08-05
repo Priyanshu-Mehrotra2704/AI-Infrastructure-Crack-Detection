@@ -1,81 +1,65 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiMail, FiLock, FiEye, FiEyeOff, FiArrowRight } from "react-icons/fi";
 import { loginUser, loginWithGoogle } from "../services/api";
-import { Link } from "react-router-dom";
+import ScanPanel from "../components/ScanPanel";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+console.log(import.meta.env.VITE_GOOGLE_CLIENT_ID)
+const containerVariants = {
+    hidden: {},
+    show: {
+        transition: { staggerChildren: 0.07, delayChildren: 0.15 },
+    },
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 14 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
+};
 
 function Login() {
-
     const navigate = useNavigate();
 
     const [email, setEmail] = useState("");
-
     const [password, setPassword] = useState("");
-
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
 
     const handleLogin = async (e) => {
-
         e.preventDefault();
+        setSubmitting(true);
+        setError("");
 
         try {
-
-            await loginUser({
-
-                email,
-
-                password
-
-            });
-
+            await loginUser({ email, password });
             navigate("/");
-
+        } catch (err) {
+            setError(err.response?.data?.detail || "Login failed");
+        } finally {
+            setSubmitting(false);
         }
-
-        catch (err) {
-
-            setError(
-
-                err.response?.data?.detail ||
-
-                "Login Failed"
-
-            );
-
-        }
-
     };
 
     // ---- Google Sign-In ----
     useEffect(() => {
-
         if (!GOOGLE_CLIENT_ID) {
             console.warn("VITE_GOOGLE_CLIENT_ID is not set — Google sign-in disabled.");
             return;
         }
 
         const handleGoogleResponse = async (googleResponse) => {
-
             try {
-
                 await loginWithGoogle(googleResponse.credential);
-
                 navigate("/");
-
             } catch (err) {
-
-                setError(
-                    err.response?.data?.detail ||
-                    "Google sign-in failed."
-                );
-
+                setError(err.response?.data?.detail || "Google sign-in failed.");
             }
-
         };
 
         const initializeGoogle = () => {
-
             if (!window.google || !document.getElementById("google-signin-button")) {
                 return;
             }
@@ -104,234 +88,146 @@ function Login() {
             }, 200);
             return () => clearInterval(interval);
         }
-
     }, [navigate]);
 
     return (
+        <div className="flex min-h-screen bg-ink font-body">
+            <ScanPanel />
 
-        <div className="min-h-screen lg:grid lg:grid-cols-2 bg-[#F6F2E7]">
-
-            {/* Fonts — move these <link> tags into index.html for production */}
-            <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap');
-
-                .ledger-underline {
-                    stroke-dasharray: 240;
-                    stroke-dashoffset: 240;
-                    animation: draw-underline 1.1s 0.35s cubic-bezier(0.65, 0, 0.35, 1) forwards;
-                }
-
-                @keyframes draw-underline {
-                    to { stroke-dashoffset: 0; }
-                }
-
-                .ledger-rise {
-                    opacity: 0;
-                    transform: translateY(8px);
-                    animation: rise 0.6s ease-out forwards;
-                }
-
-                @keyframes rise {
-                    to { opacity: 1; transform: translateY(0); }
-                }
-
-                @media (prefers-reduced-motion: reduce) {
-                    .ledger-underline { animation: none; stroke-dashoffset: 0; }
-                    .ledger-rise { animation: none; opacity: 1; transform: none; }
-                }
-            `}</style>
-
-            {/* ---- Left: the cover ---- */}
-            <div className="relative overflow-hidden bg-[#12151C] px-8 py-14 sm:px-14 lg:px-20 lg:py-0 flex flex-col justify-between lg:min-h-screen">
-
-                {/* faint diagonal cloth-cover texture */}
+            <div className="relative flex w-full lg:w-[54%] items-center justify-center px-6 py-16">
+                {/* faint corner grid, mobile/tablet also gets a hint of the brand */}
                 <div
-                    className="pointer-events-none absolute inset-0 opacity-[0.05]"
+                    className="pointer-events-none absolute inset-0 opacity-30"
                     style={{
                         backgroundImage:
-                            "repeating-linear-gradient(135deg, #C9973F 0px, #C9973F 1px, transparent 1px, transparent 14px)",
+                            "radial-gradient(var(--color-line) 1px, transparent 1px)",
+                        backgroundSize: "24px 24px",
                     }}
                 />
 
-                {/* stitched spine seam, desktop only */}
-                <div
-                    className="hidden lg:block absolute top-0 bottom-0 right-0 w-px"
-                    style={{
-                        backgroundImage:
-                            "repeating-linear-gradient(180deg, #C9973F 0 6px, transparent 6px 14px)",
-                        opacity: 0.35,
-                    }}
-                />
-
-                <div className="relative">
-                    <span
-                        className="text-[11px] tracking-[0.28em] text-[#C9973F]"
-                        style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                    >
-                        VOLUME&nbsp;II
-                    </span>
-                    <p
-                        className="mt-3 text-2xl text-[#F3F1EC]"
-                        style={{ fontFamily: "'Fraunces', serif", fontWeight: 500 }}
-                    >
-                        Ledger
-                    </p>
-                </div>
-
-                <div className="relative max-w-md py-16 lg:py-0">
-                    <h1
-                        className="text-[2.75rem] sm:text-5xl leading-[1.08] text-[#F3F1EC]"
-                        style={{ fontFamily: "'Fraunces', serif", fontWeight: 500 }}
-                    >
-                        Every entry
-                        <br />
-                        finds its way
-                        <br />
-                        back to you.
-                    </h1>
-
-                    <svg
-                        width="220"
-                        height="14"
-                        viewBox="0 0 220 14"
-                        fill="none"
-                        className="mt-5"
-                        aria-hidden="true"
-                    >
-                        <path
-                            className="ledger-underline"
-                            d="M2 8C40 2 90 12 130 6C160 1 190 10 218 5"
-                            stroke="#C9973F"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                        />
-                    </svg>
-
-                    <p className="mt-6 text-[15px] leading-relaxed text-[#8A8F98]">
-                        Sign back in to pick up exactly where you left the page open.
-                    </p>
-                </div>
-
-                <p
-                    className="relative text-[11px] tracking-[0.2em] text-[#5A5F68]"
-                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                <motion.div
+                    initial="hidden"
+                    animate="show"
+                    variants={containerVariants}
+                    className="relative z-10 w-full max-w-sm"
                 >
-                    KEPT SINCE 2024
-                </p>
-            </div>
+                    {/* corner bracket frame */}
+                    <div className="relative rounded-lg border border-line bg-panel/80 p-8 shadow-[0_0_0_1px_rgba(0,0,0,0.2)] backdrop-blur-sm">
+                        <span className="absolute -left-px -top-px h-5 w-5 border-l-2 border-t-2 border-accent" />
+                        <span className="absolute -right-px -top-px h-5 w-5 border-r-2 border-t-2 border-accent" />
+                        <span className="absolute -left-px -bottom-px h-5 w-5 border-l-2 border-b-2 border-accent" />
+                        <span className="absolute -right-px -bottom-px h-5 w-5 border-r-2 border-b-2 border-accent" />
 
-            {/* ---- Right: the page ---- */}
-            <div className="flex items-center justify-center px-6 py-16 sm:px-10 lg:py-0">
-                <div className="w-full max-w-[380px] ledger-rise">
+                        <motion.div variants={itemVariants} className="mb-8">
+                            <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent">
+                                Inspector access
+                            </p>
+                            <h1 className="mt-2 font-display text-3xl text-paper">
+                                Welcome back
+                            </h1>
+                            <p className="mt-2 text-sm text-steel">
+                                Sign in to review your latest structural scans.
+                            </p>
+                        </motion.div>
 
-                    <span
-                        className="text-[11px] tracking-[0.28em] text-[#8B8578]"
-                        style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                    >
-                        ACCOUNT ACCESS
-                    </span>
+                        <AnimatePresence>
+                            {error && (
+                                <motion.p
+                                    initial={{ opacity: 0, y: -6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -6 }}
+                                    className="mb-5 rounded-md border border-crack/40 bg-crack/10 px-3 py-2 text-sm text-crack"
+                                >
+                                    {error}
+                                </motion.p>
+                            )}
+                        </AnimatePresence>
 
-                    <h2
-                        className="mt-3 text-3xl text-[#211E18]"
-                        style={{ fontFamily: "'Fraunces', serif", fontWeight: 500 }}
-                    >
-                        Sign in
-                    </h2>
+                        <form onSubmit={handleLogin} className="space-y-4">
+                            <motion.div variants={itemVariants}>
+                                <label className="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.14em] text-steel">
+                                    Email
+                                </label>
+                                <div className="group flex items-center gap-2 rounded-md border border-line bg-ink px-3 py-2.5 transition-colors focus-within:border-accent">
+                                    <FiMail className="h-4 w-4 shrink-0 text-steel transition-colors group-focus-within:text-accent" />
+                                    <input
+                                        type="email"
+                                        placeholder="you@company.com"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        className="w-full bg-transparent text-sm text-paper placeholder:text-steel/60 focus:outline-none"
+                                        required
+                                    />
+                                </div>
+                            </motion.div>
 
-                    {error && (
-                        <div className="mt-5 flex items-start gap-2 border-l-2 border-[#B3432B] pl-3 py-1">
-                            <span
-                                className="text-[10px] tracking-[0.16em] text-[#B3432B] mt-[3px]"
-                                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                            <motion.div variants={itemVariants}>
+                                <div className="mb-1.5 flex items-center justify-between">
+                                    <label className="block font-mono text-[11px] uppercase tracking-[0.14em] text-steel">
+                                        Password
+                                    </label>
+                                </div>
+                                <div className="group flex items-center gap-2 rounded-md border border-line bg-ink px-3 py-2.5 transition-colors focus-within:border-accent">
+                                    <FiLock className="h-4 w-4 shrink-0 text-steel transition-colors group-focus-within:text-accent" />
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="••••••••"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        className="w-full bg-transparent text-sm text-paper placeholder:text-steel/60 focus:outline-none"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((s) => !s)}
+                                        className="shrink-0 text-steel transition-colors hover:text-paper"
+                                        aria-label={showPassword ? "Hide password" : "Show password"}
+                                    >
+                                        {showPassword ? (
+                                            <FiEyeOff className="h-4 w-4" />
+                                        ) : (
+                                            <FiEye className="h-4 w-4" />
+                                        )}
+                                    </button>
+                                </div>
+                            </motion.div>
+
+                            <motion.button
+                                variants={itemVariants}
+                                type="submit"
+                                disabled={submitting}
+                                whileHover={{ y: -1 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="group mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-accent py-3 text-sm font-semibold text-ink transition-shadow hover:shadow-[0_0_24px_-4px_var(--color-accent)] disabled:opacity-60"
                             >
-                                ERROR
+                                {submitting ? "Signing in…" : "Sign in"}
+                                {!submitting && (
+                                    <FiArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                                )}
+                            </motion.button>
+                        </form>
+
+                        <motion.div variants={itemVariants} className="my-6 flex items-center gap-3">
+                            <div className="h-px flex-1 bg-line" />
+                            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-steel">
+                                Or continue with
                             </span>
-                            <p className="text-[14px] text-[#B3432B]">{error}</p>
-                        </div>
-                    )}
+                            <div className="h-px flex-1 bg-line" />
+                        </motion.div>
 
-                    <form onSubmit={handleLogin} className="mt-8">
+                        <motion.div variants={itemVariants} id="google-signin-button" className="flex justify-center" />
 
-                        <div className="group">
-                            <label
-                                htmlFor="email"
-                                className="block text-[10px] tracking-[0.18em] text-[#8B8578] group-focus-within:text-[#C9973F] transition-colors"
-                                style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                            >
-                                EMAIL
-                            </label>
-                            <input
-                                id="email"
-                                type="email"
-                                placeholder="you@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="w-full bg-transparent border-0 border-b-2 border-[#E3DAC5] focus:border-[#C9973F] outline-none py-2.5 mt-1 text-[15px] text-[#211E18] placeholder:text-[#B7AF9C] transition-colors"
-                                style={{ fontFamily: "'Inter', sans-serif" }}
-                                required
-                            />
-                        </div>
-
-                        <div className="group mt-6">
-                            <label
-                                htmlFor="password"
-                                className="block text-[10px] tracking-[0.18em] text-[#8B8578] group-focus-within:text-[#C9973F] transition-colors"
-                                style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                            >
-                                PASSWORD
-                            </label>
-                            <input
-                                id="password"
-                                type="password"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full bg-transparent border-0 border-b-2 border-[#E3DAC5] focus:border-[#C9973F] outline-none py-2.5 mt-1 text-[15px] text-[#211E18] placeholder:text-[#B7AF9C] transition-colors"
-                                style={{ fontFamily: "'Inter', sans-serif" }}
-                                required
-                            />
-                        </div>
-
-                        <button
-                            type="submit"
-                            className="w-full mt-9 py-3 rounded-sm bg-[#12151C] text-[#F3F1EC] text-[14px] tracking-[0.04em] hover:bg-[#1B2029] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9973F] transition-colors"
-                            style={{ fontFamily: "'Inter', sans-serif", fontWeight: 500 }}
-                        >
-                            Sign in
-                        </button>
-
-                    </form>
-
-                    <div className="flex items-center gap-4 my-7">
-                        <div className="flex-1 h-px bg-[#E3DAC5]" />
-                        <span
-                            className="text-[10px] tracking-[0.2em] text-[#B7AF9C]"
-                            style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                        >
-                            OR
-                        </span>
-                        <div className="flex-1 h-px bg-[#E3DAC5]" />
+                        <motion.p variants={itemVariants} className="mt-6 text-center text-sm text-steel">
+                            Don't have an account?{" "}
+                            <Link to="/register" className="font-medium text-accent hover:text-accent-2">
+                                Register
+                            </Link>
+                        </motion.p>
                     </div>
-
-                    <div id="google-signin-button" className="flex justify-center" />
-
-                    <p
-                        className="text-center mt-8 text-[14px] text-[#8B8578]"
-                        style={{ fontFamily: "'Inter', sans-serif" }}
-                    >
-                        Don't have an account?{" "}
-                        <Link to="/register" className="text-[#211E18] font-medium underline underline-offset-4 decoration-[#E3DAC5] hover:decoration-[#C9973F] transition-colors">
-                            Register
-                        </Link>
-                    </p>
-
-                </div>
+                </motion.div>
             </div>
-
         </div>
-
     );
-
 }
 
 export default Login;

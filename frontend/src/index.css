@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+@theme {
+    /* Blueprint-dark surfaces */
+    --color-ink: #0a0f1a;
+    --color-panel: #111927;
+    --color-line: #1f2a3d;
+
+    /* Signal colors, drawn from civil-inspection signage */
+    --color-accent: #f2a93b;
+    --color-accent-2: #ffd27a;
+    --color-crack: #ff6152;
+
+    /* Text */
+    --color-paper: #edeff3;
+    --color-steel: #8793a8;
+
+    --font-display: "Space Grotesk", "Inter", sans-serif;
+    --font-body: "Inter", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", "Fira Code", monospace;
+}
+
+body {
+    background-color: var(--color-ink);
+}
