@@ -6,7 +6,6 @@ import { loginUser, loginWithGoogle } from "../services/api";
 import ScanPanel from "../components/ScanPanel";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-console.log(import.meta.env.VITE_GOOGLE_CLIENT_ID)
 const containerVariants = {
     hidden: {},
     show: {

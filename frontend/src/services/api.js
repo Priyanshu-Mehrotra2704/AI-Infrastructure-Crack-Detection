@@ -1,60 +1,96 @@
 import axios from "axios";
 
+const BASE_URL =
+    import.meta.env.VITE_API_URL ||
+    "http://localhost:8000";
+
+// Main API client
 const API = axios.create({
-
-    baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000",
-
-    withCredentials: true
-
+    baseURL: BASE_URL,
+    withCredentials: true,
+    headers: {
+        "Content-Type": "application/json"
+    }
 });
 
-// Auto-refresh: if a request fails with 401 (expired access token), try
-// /auth/refresh once (it rotates the refresh token cookie too), then
-// retry the original request. If refresh itself fails, let the 401
-// bubble up as-is (ProtectedRoute will redirect to /login).
-let isRefreshing = false;
+// Separate client for refresh request.
+// Is client par response interceptor nahi chalega.
+const refreshClient = axios.create({
+    baseURL: BASE_URL,
+    withCredentials: true,
+    headers: {
+        "Content-Type": "application/json"
+    }
+});
+
 let refreshPromise = null;
 
 API.interceptors.response.use(
-
     (response) => response,
 
     async (error) => {
-
         const originalRequest = error.config;
 
-        const isAuthRoute =
-            originalRequest?.url?.includes("/auth/login") ||
-            originalRequest?.url?.includes("/auth/register") ||
-            originalRequest?.url?.includes("/auth/refresh");
-
-        if (
-            error.response?.status === 401 &&
-            !originalRequest._retry &&
-            !isAuthRoute
-        ) {
-
-            originalRequest._retry = true;
-
-            try {
-
-                if (!isRefreshing) {
-                    isRefreshing = true;
-                    refreshPromise = API.post("/auth/refresh").finally(() => {
-                        isRefreshing = false;
-                    });
-                }
-
-                await refreshPromise;
-
-                return API(originalRequest);
-
-            } catch (refreshError) {
-                return Promise.reject(refreshError);
-            }
+        if (!originalRequest) {
+            return Promise.reject(error);
         }
 
-        return Promise.reject(error);
+        const requestUrl = originalRequest.url || "";
+
+        const isAuthRoute =
+            requestUrl.includes("/auth/login") ||
+            requestUrl.includes("/auth/register") ||
+            requestUrl.includes("/auth/google") ||
+            requestUrl.includes("/auth/refresh") ||
+            requestUrl.includes("/auth/resend-verification") ||
+            requestUrl.includes("/auth/verify-email");
+
+        const isUnauthorized =
+            error.response?.status === 401;
+
+        if (
+            !isUnauthorized ||
+            originalRequest._retry ||
+            isAuthRoute
+        ) {
+            return Promise.reject(error);
+        }
+
+        originalRequest._retry = true;
+
+        try {
+            // Agar refresh already chal raha hai,
+            // baaki requests same promise ka wait karengi.
+            if (!refreshPromise) {
+                refreshPromise = refreshClient
+                    .post(
+                        "/auth/refresh",
+                        {},
+                        {
+                            withCredentials: true
+                        }
+                    )
+                    .finally(() => {
+                        refreshPromise = null;
+                    });
+            }
+
+            await refreshPromise;
+
+            // Refresh successful hone ke baad
+            // original request dobara call hogi.
+            return API(originalRequest);
+
+        } catch (refreshError) {
+            refreshPromise = null;
+
+            // Optional: login page par redirect
+            if (window.location.pathname !== "/login") {
+                window.location.href = "/login";
+            }
+
+            return Promise.reject(refreshError);
+        }
     }
 );
 
@@ -63,7 +99,15 @@ export default API;
 // ---------- Prediction ----------
 
 export const predictImage = (formData) =>
-    API.post("/predict/", formData);
+    API.post(
+        "/predict/",
+        formData,
+        {
+            headers: {
+                "Content-Type": "multipart/form-data"
+            }
+        }
+    );
 
 // ---------- History ----------
 
@@ -91,19 +135,55 @@ export const registerUser = (data) =>
     API.post("/auth/register", data);
 
 export const loginUser = (data) =>
-    API.post("/auth/login", data);
+    API.post(
+        "/auth/login",
+        data,
+        {
+            withCredentials: true
+        }
+    );
 
 export const loginWithGoogle = (credential) =>
-    API.post("/auth/google", { credential });
+    API.post(
+        "/auth/google",
+        {
+            credential
+        },
+        {
+            withCredentials: true
+        }
+    );
+
+export const refreshAccessToken = () =>
+    refreshClient.post(
+        "/auth/refresh",
+        {},
+        {
+            withCredentials: true
+        }
+    );
 
 export const logoutUser = () =>
-    API.post("/auth/logout");
+    API.post(
+        "/auth/logout",
+        {},
+        {
+            withCredentials: true
+        }
+    );
 
 export const getCurrentUser = () =>
     API.get("/auth/me");
 
 export const verifyEmail = (token) =>
-    API.get(`/auth/verify-email?token=${encodeURIComponent(token)}`);
+    API.get(
+        `/auth/verify-email?token=${encodeURIComponent(token)}`
+    );
 
 export const resendVerification = (email) =>
-    API.post("/auth/resend-verification", { email });
+    API.post(
+        "/auth/resend-verification",
+        {
+            email
+        }
+    );
