@@ -1,44 +1,47 @@
 import { Routes, Route } from "react-router-dom";
 import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
+import Overview from "./pages/Overview";
+import Scan from "./pages/Scan";
+import HistoryPage from "./pages/HistoryPage";
 import VerifyEmail from "./pages/VerifyEmail";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
-
     return (
-
         <Routes>
-
-            <Route
-                path="/register"
-                element={<Register />}
-            />
-
-            <Route
-                path="/login"
-                element={<Login />}
-            />
-
-            <Route
-                path="/verify-email"
-                element={<VerifyEmail />}
-            />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
 
             <Route
                 path="/"
                 element={
                     <ProtectedRoute>
-                        <Dashboard />
+                        <Overview />
                     </ProtectedRoute>
                 }
             />
 
+            <Route
+                path="/scan"
+                element={
+                    <ProtectedRoute>
+                        <Scan />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/history"
+                element={
+                    <ProtectedRoute>
+                        <HistoryPage />
+                    </ProtectedRoute>
+                }
+            />
         </Routes>
-
     );
-
 }
 
 export default App;
