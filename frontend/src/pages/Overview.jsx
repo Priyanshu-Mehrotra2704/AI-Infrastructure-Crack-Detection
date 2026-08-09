@@ -1,127 +1,159 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "../components/Navbar";
-import PieChartCard from "../components/Charts/PieChartCard";
-import WeeklyTrendChart from "../components/Charts/WeeklyTrendChart";
-import { getDashboardStats } from "../services/api";
-import {
-    FiActivity, FiAlertTriangle, FiCheckCircle,
-    FiTarget, FiTrendingUp, FiZap, FiCalendar
-} from "react-icons/fi";
+import UploadCard from "../components/UploadCard";
+import Loader from "../components/Loader";
+import BatchResultTable from "../components/BatchResultTable";
+import { predictImage } from "../services/api";
+import { FiZap } from "react-icons/fi";
 
-const STAT_CONFIG = [
-    { key: "total",               label: "Total Inspections",   icon: FiActivity,      accent: "var(--color-accent)"   },
-    { key: "crack",               label: "Cracks Found",        icon: FiAlertTriangle, accent: "var(--color-crack)"    },
-    { key: "no_crack",            label: "Clear",               icon: FiCheckCircle,   accent: "#3ed6c4"               },
-    { key: "average_confidence",  label: "Avg Confidence",      icon: FiTarget,        accent: "var(--color-accent)"   , suffix: "%" },
-    { key: "highest_confidence",  label: "Peak Confidence",     icon: FiTrendingUp,    accent: "var(--color-accent-2)" , suffix: "%" },
-    { key: "today_inspections",   label: "Today",               icon: FiCalendar,      accent: "#a78bfa"               },
-];
+function ScanPage() {
 
-function StatCard({ label, value, icon: Icon, accent, suffix = "" }) {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -2 }}
-            className="relative overflow-hidden rounded-lg border border-line bg-panel p-5"
-        >
-            {/* accent glow top-left */}
-            <div
-                className="pointer-events-none absolute -left-6 -top-6 h-20 w-20 rounded-full opacity-20 blur-xl"
-                style={{ backgroundColor: accent }}
-            />
-            <div className="relative z-10">
-                <div
-                    className="mb-4 flex h-8 w-8 items-center justify-center rounded-md border"
-                    style={{ borderColor: `${accent}40`, color: accent, backgroundColor: `${accent}12` }}
-                >
-                    <Icon className="h-4 w-4" />
-                </div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-steel">{label}</p>
-                <p className="mt-1 font-display text-3xl text-paper">
-                    {value}{suffix}
-                </p>
-            </div>
-        </motion.div>
-    );
-}
+    // ---- Exact same state from original Dashboard ----
+    const [file, setFile] = useState([]);
+    const [preview, setPreview] = useState([]);
+    const [result, setResult] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [selectedModel, setSelectedModel] = useState("Pavement");
 
-function Overview() {
-    const navigate = useNavigate();
-    const [stats, setStats] = useState({
-        total: 0, crack: 0, no_crack: 0,
-        average_confidence: 0, highest_confidence: 0, today_inspections: 0,
-    });
-    const [loading, setLoading] = useState(true);
+    // ---- Exact same analyzeImage logic from original Dashboard ----
+    const analyzeImage = async () => {
 
-    useEffect(() => {
-        getDashboardStats()
-            .then((r) => setStats(r.data))
-            .catch(console.error)
-            .finally(() => setLoading(false));
-    }, []);
+        if (!file || file.length === 0) {
+            alert("Please select an image.");
+            return;
+        }
+
+        const formData = new FormData();
+        file.forEach((f) => {
+            formData.append("files", f);
+        });
+        formData.append("model", selectedModel);
+
+        setLoading(true);
+        setResult(null);
+
+        try {
+            const response = await predictImage(formData);
+            setResult(response.data.results);
+
+            // Notify Overview to re-fetch stats
+            window.dispatchEvent(new Event("stats-refresh"));
+
+            // Notify HistoryPage to re-fetch (same pattern as original refreshHistory)
+            window.dispatchEvent(new Event("history-refresh"));
+
+        } catch (error) {
+            console.error(error);
+            alert("Prediction failed.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-ink font-body">
             <Navbar />
 
             <div className="mx-auto max-w-7xl px-6 py-10">
-                {/* page header */}
+
+                {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mb-8 flex items-end justify-between"
+                    className="mb-8"
                 >
-                    <div>
-                        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
-                            Mission control
-                        </p>
-                        <h1 className="mt-1 font-display text-3xl text-paper">Overview</h1>
-                    </div>
-                    <button
-                        onClick={() => navigate("/scan")}
-                        className="flex items-center gap-2 rounded-md bg-accent px-4 py-2.5 font-mono text-xs uppercase tracking-[0.12em] text-ink transition-shadow hover:shadow-[0_0_20px_-4px_var(--color-accent)]"
-                    >
-                        <FiZap className="h-3.5 w-3.5" />
-                        New scan
-                    </button>
+                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
+                        AI analysis
+                    </p>
+                    <h1 className="mt-1 font-display text-3xl text-paper">
+                        New Scan
+                    </h1>
+                    <p className="mt-1 text-sm text-steel">
+                        Upload infrastructure images for crack detection.
+                    </p>
                 </motion.div>
 
-                {/* stat cards */}
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 mb-8">
-                    {STAT_CONFIG.map((s, i) => (
-                        <motion.div
-                            key={s.key}
-                            initial={{ opacity: 0, y: 16 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.06 }}
-                        >
-                            <StatCard
-                                label={s.label}
-                                value={stats[s.key]}
-                                icon={s.icon}
-                                accent={s.accent}
-                                suffix={s.suffix}
-                            />
-                        </motion.div>
-                    ))}
-                </div>
-
-                {/* charts */}
+                {/* Structure select — exact same options/values from original */}
                 <motion.div
-                    initial={{ opacity: 0, y: 16 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="grid grid-cols-1 gap-6 lg:grid-cols-2"
+                    transition={{ delay: 0.08 }}
+                    className="mb-6"
                 >
-                    <PieChartCard stats={stats} />
-                    <WeeklyTrendChart stats={stats} />
+                    <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.16em] text-steel">
+                        Select Structure
+                    </label>
+                    <div className="flex gap-2">
+                        {[
+                            { label: "Pavement", value: "Pavement" },
+                            { label: "Wall",     value: "Wall"     },
+                            { label: "Bridge Deck", value: "Deck"  },
+                        ].map((opt) => (
+                            <button
+                                key={opt.value}
+                                onClick={() => setSelectedModel(opt.value)}
+                                className="rounded-lg border px-5 py-2.5 font-mono text-xs uppercase tracking-[0.1em] transition-all"
+                                style={{
+                                    borderColor: selectedModel === opt.value
+                                        ? "var(--color-accent)"
+                                        : "var(--color-line)",
+                                    backgroundColor: selectedModel === opt.value
+                                        ? "rgba(242,169,59,0.1)"
+                                        : "var(--color-ink)",
+                                    color: selectedModel === opt.value
+                                        ? "var(--color-accent)"
+                                        : "var(--color-steel)",
+                                }}
+                            >
+                                {opt.label}
+                            </button>
+                        ))}
+                    </div>
                 </motion.div>
+
+                {/* Upload + Result — exact same grid layout as original */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.12 }}
+                    className="grid grid-cols-1 gap-8 md:grid-cols-2"
+                >
+                    {/* UploadCard — same props as original */}
+                    <UploadCard
+                        setFile={setFile}
+                        preview={preview}
+                        setPreview={setPreview}
+                    />
+
+                    {/* Loader / BatchResultTable — exact same conditional as original */}
+                    {loading
+                        ? <Loader />
+                        : <BatchResultTable results={result} />
+                    }
+                </motion.div>
+
+                {/* Analyze Button — exact same onClick as original */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.16 }}
+                    className="mt-8 flex justify-center"
+                >
+                    <motion.button
+                        onClick={analyzeImage}
+                        whileHover={{ y: -2 }}
+                        whileTap={{ scale: 0.97 }}
+                        className="flex items-center gap-2 rounded-xl bg-accent px-10 py-4 font-semibold text-ink shadow-lg transition-shadow hover:shadow-[0_0_28px_-4px_var(--color-accent)]"
+                    >
+                        <FiZap className="h-4 w-4" />
+                        Analyze Image
+                    </motion.button>
+                </motion.div>
+
             </div>
         </div>
     );
 }
 
-export default Overview;
+export default ScanPage;

@@ -1,8 +1,7 @@
-function UploadCard({
-    setFile,
-    preview,
-    setPreview
-}) {
+import { FiUploadCloud } from "react-icons/fi";
+
+// ---- Exact same props + handleFileChange logic from original ----
+function UploadCard({ setFile, preview, setPreview }) {
 
     const handleFileChange = (e) => {
 
@@ -11,47 +10,23 @@ function UploadCard({
         setFile(selectedFiles);
 
         const imagePreviews = selectedFiles.map((file) =>
-
             URL.createObjectURL(file)
-
         );
 
         setPreview(imagePreviews);
-
     };
 
     return (
+        <div className="rounded-2xl border border-line bg-panel p-6">
 
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-
+            <h2 className="mb-1 font-display text-xl text-paper">
                 Upload Image
-
             </h2>
-
-            <p className="text-gray-500 mb-6">
-
+            <p className="mb-5 text-sm text-steel">
                 Upload infrastructure images for crack detection.
-
             </p>
 
-            <label
-                className="
-                flex
-                flex-col
-                items-center
-                justify-center
-                border-2
-                border-dashed
-                border-blue-400
-                rounded-xl
-                p-8
-                cursor-pointer
-                hover:bg-blue-50
-                transition"
-            >
-
+            <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-line bg-ink p-8 transition-colors hover:border-accent hover:bg-accent/5">
                 <input
                     type="file"
                     accept="image/*"
@@ -59,51 +34,27 @@ function UploadCard({
                     className="hidden"
                     onChange={handleFileChange}
                 />
-
-                <span className="text-5xl mb-4">
-                    📤
-                </span>
-
-                <p className="font-semibold">
-
-                    Click to Upload
-
+                <FiUploadCloud className="mb-3 h-10 w-10 text-steel" />
+                <p className="font-semibold text-paper">Click to Upload</p>
+                <p className="mt-1 font-mono text-xs uppercase tracking-[0.12em] text-steel">
+                    JPG · PNG · JPEG
                 </p>
-
-                <p className="text-gray-500 text-sm">
-
-                    JPG • PNG • JPEG
-
-                </p>
-
             </label>
 
-            <div className="grid grid-cols-2 gap-4 mt-4">
-
-                {
-                    preview.map((image, index) => (
-
-                        <img
-
-                            key={index}
-
-                            src={image}
-
-                            alt="preview"
-
-                            className="rounded-xl h-32 w-full object-cover"
-
-                        />
-
-                    ))
-                }
-
+            {/* Exact same preview grid logic from original */}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+                {preview.map((image, index) => (
+                    <img
+                        key={index}
+                        src={image}
+                        alt="preview"
+                        className="h-32 w-full rounded-xl border border-line object-cover"
+                    />
+                ))}
             </div>
 
         </div>
-
     );
-
 }
 
 export default UploadCard;
