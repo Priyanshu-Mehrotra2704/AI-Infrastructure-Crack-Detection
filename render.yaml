@@ -1,7 +1,0 @@
-services:
-  - type: web
-    name: crackwatch
-    runtime: static
-    rootDir: frontend
-    buildCommand: npm ci && npm run build
-    staticPublishPath: dist
