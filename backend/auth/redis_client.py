@@ -5,7 +5,14 @@ import redis
 
 load_dotenv()
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+REDIS_URL = os.getenv("REDIS_URL")
 
-# decode_responses=True so we get str back instead of bytes everywhere
-redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+if not REDIS_URL:
+    raise RuntimeError(
+        "REDIS_URL environment variable is not configured."
+    )
+
+redis_client = redis.from_url(
+    REDIS_URL,
+    decode_responses=True
+)
