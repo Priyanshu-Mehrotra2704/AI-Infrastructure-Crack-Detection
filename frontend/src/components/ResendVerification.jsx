@@ -1,21 +1,7 @@
 import { useState } from "react";
 import { resendVerification } from "../services/api";
 
-// Drop this into Login.jsx. Render it when your login error handler sees
-// the login request fail with status 403 and detail === "EMAIL_NOT_VERIFIED".
-// You'll need to pass in the email the user just tried to log in with.
-//
-// Example wiring inside Login.jsx's catch block:
-//
-//   catch (err) {
-//       if (err.response?.status === 403 && err.response?.data?.detail === "EMAIL_NOT_VERIFIED") {
-//           setUnverifiedEmail(email);
-//       } else {
-//           setError("Invalid email or password.");
-//       }
-//   }
-//
-// then somewhere in the render: {unverifiedEmail && <ResendVerification email={unverifiedEmail} />}
+
 
 function ResendVerification({ email }) {
 
