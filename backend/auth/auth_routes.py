@@ -192,19 +192,12 @@ def login_user(
     refresh_token = create_refresh_token(existing_user.email)
 
     response.set_cookie(
-
-    key="access_token",
-
-    value=access_token,
-
-    httponly=True,
-
-    secure=os.getenv("COOKIE_SECURE", "False") == "True",   # set COOKIE_SECURE=True in prod (HTTPS)
-
-    samesite="lax",
-
-    max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
-
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
 
     response.set_cookie(
@@ -380,9 +373,9 @@ def google_login(
 
         httponly=True,
 
-        secure=os.getenv("COOKIE_SECURE", "False") == "True",
+        secure=True,
 
-        samesite="lax",
+        samesite="none",
 
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
 
@@ -437,9 +430,9 @@ def refresh_access_token(
 
     httponly=True,
 
-    secure=os.getenv("COOKIE_SECURE", "False") == "True",
+    secure=True,
 
-    samesite="lax",
+    samesite="none",
 
     max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
 

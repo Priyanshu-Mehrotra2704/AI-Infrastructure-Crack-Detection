@@ -129,8 +129,7 @@ app.mount(
 # ============================================================
 
 CORS_ORIGINS = os.getenv(
-    "CORS_ORIGINS",
-    "http://localhost:5173"
+    "CORS_ORIGINS"
 ).split(",")
 
 
@@ -138,8 +137,7 @@ app.add_middleware(
     CORSMiddleware,
 
     allow_origins=[
-        origin.strip()
-        for origin in CORS_ORIGINS
+        "https://crackwatch.vercel.app"
     ],
 
     allow_credentials=True,
