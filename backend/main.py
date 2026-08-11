@@ -1,286 +1,983 @@
+import os
 import cv2
 import numpy as np
-from models import InspectionHistory
-from fastapi import FastAPI, UploadFile, File, Depends, Form
+
+from fastapi import (
+    FastAPI,
+    UploadFile,
+    File,
+    Depends,
+    HTTPException
+)
+
 from fastapi.responses import FileResponse
-from reports.report_generator import generate_report
+
 from fastapi.middleware.cors import CORSMiddleware
-from auth.auth_routes import router as auth_router
-from sqlalchemy.orm import Session
-from fastapi import HTTPException
-# from gradcam.gradcam import (make_gradcam_heatmap,save_gradcam)
-import os
+
 from fastapi.staticfiles import StaticFiles
-from database import get_db
-from auth.jwt_handler import get_current_user
-from models import User
+
+from sqlalchemy.orm import Session
+
+
+# ============================================================
+# DATABASE / MODELS
+# ============================================================
+
+from database import (
+    get_db,
+    Base,
+    engine
+)
+
+from models import (
+    User,
+    InspectionHistory
+)
+
+
+# ============================================================
+# AUTH
+# ============================================================
+
+from auth.auth_routes import (
+    router as auth_router
+)
+
+from auth.jwt_handler import (
+    get_current_user
+)
+
+
+# ============================================================
+# CRUD
+# ============================================================
+
 from crud import (
     create_inspection,
     get_all_inspections,
     delete_inspection,
     get_dashboard_stats
 )
-from model_loader import MODELS
 
-# Per-structure decision thresholds — tuned from evaluate_models.py results.
-# Deck's default 0.5 missed too many real cracks (recall was only 0.53),
-# so its threshold is lowered to catch more of them (trade-off: more false alarms).
-THRESHOLDS = {
-    "Pavement": 0.5,
-    "Wall": 0.5,
-    "Deck": 0.3,
-}
-from database import Base, engine
-import models
 
-Base.metadata.create_all(bind=engine)
+# ============================================================
+# REPORT
+# ============================================================
+
+from reports.report_generator import (
+    generate_report
+)
+
+
+# ============================================================
+# AI MODELS
+# ============================================================
+
+from model_loader import (
+    MODELS,
+    STRUCTURE_MODEL,
+    STRUCTURE_CLASSES
+)
+
+
+# ============================================================
+# DATABASE INITIALIZATION
+# ============================================================
+
+Base.metadata.create_all(
+    bind=engine
+)
+
+
+# ============================================================
+# FASTAPI
+# ============================================================
+
 app = FastAPI()
 
-app.include_router(auth_router)
 
-os.makedirs("gradcam/generated_heatmaps", exist_ok=True)
+# ============================================================
+# AUTH ROUTES
+# ============================================================
+
+app.include_router(
+    auth_router
+)
+
+
+# ============================================================
+# GRADCAM DIRECTORY
+# ============================================================
+
+os.makedirs(
+    "gradcam/generated_heatmaps",
+    exist_ok=True
+)
+
 
 app.mount(
     "/generated_heatmaps",
-    StaticFiles(directory="gradcam/generated_heatmaps"),
+    StaticFiles(
+        directory="gradcam/generated_heatmaps"
+    ),
     name="generated_heatmaps"
 )
+
+
+# ============================================================
+# CORS
+# ============================================================
 
 CORS_ORIGINS = os.getenv(
     "CORS_ORIGINS",
     "http://localhost:5173"
 ).split(",")
 
-from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+
+    allow_origins=[
+        origin.strip()
+        for origin in CORS_ORIGINS
+    ],
+
     allow_credentials=True,
+
     allow_methods=["*"],
+
     allow_headers=["*"],
 )
+
+
+# ============================================================
+# IMAGE CONFIGURATION
+# ============================================================
 
 IMG_SIZE = 224
 
 
+# ============================================================
+# STRUCTURE CONFIGURATION
+# ============================================================
+
+STRUCTURE_CONFIDENCE_THRESHOLD = 0.70
+
+
+STRUCTURE_MODEL_MAPPING = {
+
+    "pavement": "Pavement",
+
+    "wall": "Wall",
+
+    "bridge_deck": "Deck",
+
+    "bridge deck": "Deck",
+
+    "deck": "Deck"
+
+}
+
+
+# ============================================================
+# CRACK DETECTION THRESHOLDS
+# ============================================================
+
+THRESHOLDS = {
+
+    "Pavement": 0.5,
+
+    "Wall": 0.5,
+
+    "Deck": 0.3,
+
+}
+
+
+# ============================================================
+# HELPER:
+# NORMALIZE STRUCTURE NAME
+# ============================================================
+
+def normalize_structure_name(
+    structure_name
+):
+
+    normalized = (
+        structure_name
+        .strip()
+        .lower()
+        .replace("-", "_")
+    )
+
+    return normalized
+
+
+# ============================================================
+# HELPER:
+# AUTOMATIC STRUCTURE DETECTION
+# ============================================================
+
+def detect_structure(
+    image
+):
+
+    """
+    Detect whether the image belongs to:
+
+    pavement
+    wall
+    bridge_deck
+    """
+
+    # Structure classifier expects
+    # images in the same 0-255 range used
+    # during training.
+
+    resized = cv2.resize(
+        image,
+        (IMG_SIZE, IMG_SIZE)
+    )
+
+    structure_input = (
+        resized
+        .astype("float32")
+    )
+
+    structure_input = np.expand_dims(
+        structure_input,
+        axis=0
+    )
+
+
+    prediction = STRUCTURE_MODEL.predict(
+        structure_input,
+        verbose=0
+    )[0]
+
+
+    predicted_index = int(
+        np.argmax(prediction)
+    )
+
+
+    structure_confidence = float(
+        prediction[predicted_index]
+    )
+
+
+    structure_name = STRUCTURE_CLASSES[
+        predicted_index
+    ]
+
+
+    return (
+        structure_name,
+        structure_confidence,
+        prediction
+    )
+
+
+# ============================================================
+# HELPER:
+# SELECT CRACK MODEL
+# ============================================================
+
+def get_crack_model(
+    structure_name
+):
+
+    normalized = normalize_structure_name(
+        structure_name
+    )
+
+
+    model_name = STRUCTURE_MODEL_MAPPING.get(
+        normalized
+    )
+
+
+    if model_name is None:
+
+        return None, None
+
+
+    selected_model = MODELS.get(
+        model_name
+    )
+
+
+    return (
+        model_name,
+        selected_model
+    )
+
+
+# ============================================================
+# HOME
+# ============================================================
+
 @app.get("/")
 def home():
+
     return {
-        "message": "Welcome to the Image Classification API!"
+        "message":
+        "Welcome to the Image Classification API!"
     }
 
+
+# ============================================================
+# AUTOMATIC PREDICTION
+# ============================================================
 
 @app.post("/predict/")
 async def predict(
-    files: list[UploadFile] = File(...),
-    model: str = Form(...),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
 
-    selected_model = MODELS.get(model)
-    if selected_model is None:
-        return {
-            "error": "Invalid model selected."
-        }
+    files: list[UploadFile] = File(...),
+
+    db: Session = Depends(get_db),
+
+    current_user: User = Depends(
+        get_current_user
+    )
+
+):
 
     results = []
 
+
+    # ========================================================
+    # PROCESS EVERY IMAGE
+    # ========================================================
+
     for file in files:
 
-        contents = await file.read()
-        UPLOAD_DIR = "uploaded_images"
+        try:
 
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
+            # ------------------------------------------------
+            # READ IMAGE
+            # ------------------------------------------------
 
-        image_path = os.path.join(
-            UPLOAD_DIR,
-            file.filename
-        )
+            contents = await file.read()
 
-        with open(image_path, "wb") as f:
-            f.write(contents)
 
-        nparr = np.frombuffer(contents, np.uint8)
+            if not contents:
 
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                results.append({
 
-        if img is None:
-            continue
+                    "filename": file.filename,
 
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    "prediction":
+                    "Invalid Image",
 
-        img = cv2.resize(img, (IMG_SIZE, IMG_SIZE))
+                    "confidence": 0,
 
-        img = img.astype("float32") / 255.0
+                    "structure":
+                    "Unknown",
 
-        img = np.expand_dims(img, axis=0)
+                    "structure_confidence":
+                    0,
 
-        prediction = selected_model.predict(img,verbose=0)
-        # -------- GradCAM Disabled --------
+                    "model_name":
+                    "None",
 
-        heatmap = None
+                    "heatmap": None,
 
-        heatmap_path = None
+                    "error":
+                    "Empty image file."
 
-        # heatmap = make_gradcam_heatmap(img, selected_model)
+                })
 
-        # name = os.path.splitext(file.filename)[0]
+                continue
 
-        # heatmap_path = os.path.join(
-        #     "gradcam",
-        #     "generated_heatmaps",
-        #     f"{name}_heatmap.jpg"
-        # )
 
-        # save_gradcam(
-        #     image_path,
-        #     heatmap,
-        #     heatmap_path
-        # )
+            # ------------------------------------------------
+            # SAVE IMAGE
+            # ------------------------------------------------
 
-        confidence = float(prediction[0][0])
+            UPLOAD_DIR = "uploaded_images"
 
-        threshold = THRESHOLDS.get(model, 0.5)
+            os.makedirs(
+                UPLOAD_DIR,
+                exist_ok=True
+            )
 
-        if confidence >= threshold:
 
-            result = "Crack"
+            image_path = os.path.join(
+                UPLOAD_DIR,
+                file.filename
+            )
 
-            confidence = round(confidence * 100, 2)
 
-        else:
+            with open(
+                image_path,
+                "wb"
+            ) as f:
 
-            result = "No Crack"
+                f.write(contents)
 
-            confidence = round((1 - confidence) * 100, 2)
 
-        create_inspection(
+            # ------------------------------------------------
+            # DECODE IMAGE
+            # ------------------------------------------------
 
-            db=db,
+            nparr = np.frombuffer(
+                contents,
+                np.uint8
+            )
 
-            image_name=file.filename,
 
-            prediction=result,
+            img = cv2.imdecode(
+                nparr,
+                cv2.IMREAD_COLOR
+            )
 
-            confidence=confidence,
 
-            model_name="CNN",
+            if img is None:
 
-            structure_type=model,
-            
-            user_id=current_user.id
+                results.append({
 
-        )
+                    "filename":
+                    file.filename,
 
-        results.append({
+                    "prediction":
+                    "Invalid Image",
 
-            "filename": file.filename,
+                    "confidence": 0,
 
-            "prediction": result,
+                    "structure":
+                    "Unknown",
 
-            "confidence": confidence,
+                    "structure_confidence":
+                    0,
 
-            "structure": model,
+                    "model_name":
+                    "None",
 
-            "model_name": "CNN",
-            "heatmap": None
+                    "heatmap": None,
 
-        })
+                    "error":
+                    "Could not decode image."
+
+                })
+
+                continue
+
+
+            # Convert BGR → RGB
+
+            img_rgb = cv2.cvtColor(
+                img,
+                cv2.COLOR_BGR2RGB
+            )
+
+
+            # =================================================
+            # STEP 1:
+            # AUTOMATIC STRUCTURE DETECTION
+            # =================================================
+
+            (
+                detected_structure,
+                structure_confidence,
+                structure_probabilities
+            ) = detect_structure(
+                img_rgb
+            )
+
+
+            structure_confidence_percent = round(
+                structure_confidence * 100,
+                2
+            )
+
+
+            print()
+            print(
+                f"Image: {file.filename}"
+            )
+
+            print(
+                f"Detected structure: "
+                f"{detected_structure}"
+            )
+
+            print(
+                f"Structure confidence: "
+                f"{structure_confidence_percent}%"
+            )
+
+
+            # =================================================
+            # STEP 2:
+            # CHECK STRUCTURE CONFIDENCE
+            # =================================================
+
+            if (
+                structure_confidence
+                < STRUCTURE_CONFIDENCE_THRESHOLD
+            ):
+
+                print(
+                    "Structure confidence too low."
+                )
+
+
+                results.append({
+
+                    "filename":
+                    file.filename,
+
+                    "prediction":
+                    "Structure Uncertain",
+
+                    "confidence": 0,
+
+                    "structure":
+                    detected_structure,
+
+                    "structure_confidence":
+                    structure_confidence_percent,
+
+                    "model_name":
+                    "Structure Classifier",
+
+                    "heatmap": None,
+
+                    "error":
+                    "Unable to confidently identify "
+                    "the infrastructure type."
+
+                })
+
+                continue
+
+
+            # =================================================
+            # STEP 3:
+            # SELECT CRACK MODEL AUTOMATICALLY
+            # =================================================
+
+            (
+                selected_model_name,
+                selected_model
+            ) = get_crack_model(
+                detected_structure
+            )
+
+
+            if selected_model is None:
+
+                results.append({
+
+                    "filename":
+                    file.filename,
+
+                    "prediction":
+                    "Structure Unsupported",
+
+                    "confidence": 0,
+
+                    "structure":
+                    detected_structure,
+
+                    "structure_confidence":
+                    structure_confidence_percent,
+
+                    "model_name":
+                    "None",
+
+                    "heatmap": None,
+
+                    "error":
+                    f"No crack model is configured "
+                    f"for structure: "
+                    f"{detected_structure}"
+
+                })
+
+                continue
+
+
+            print(
+                f"Selected crack model: "
+                f"{selected_model_name}"
+            )
+
+
+            # =================================================
+            # STEP 4:
+            # PREPARE IMAGE FOR CRACK MODEL
+            # =================================================
+
+            crack_img = cv2.resize(
+                img_rgb,
+                (IMG_SIZE, IMG_SIZE)
+            )
+
+
+            crack_img = (
+                crack_img
+                .astype("float32")
+                / 255.0
+            )
+
+
+            crack_img = np.expand_dims(
+                crack_img,
+                axis=0
+            )
+
+
+            # =================================================
+            # STEP 5:
+            # CRACK PREDICTION
+            # =================================================
+
+            prediction = selected_model.predict(
+                crack_img,
+                verbose=0
+            )
+
+
+            raw_confidence = float(
+                prediction[0][0]
+            )
+
+
+            # =================================================
+            # STEP 6:
+            # STRUCTURE-SPECIFIC THRESHOLD
+            # =================================================
+
+            threshold = THRESHOLDS.get(
+                selected_model_name,
+                0.5
+            )
+
+
+            if raw_confidence >= threshold:
+
+                result = "Crack"
+
+                crack_confidence = (
+                    raw_confidence * 100
+                )
+
+            else:
+
+                result = "No Crack"
+
+                crack_confidence = (
+                    (1 - raw_confidence) * 100
+                )
+
+
+            crack_confidence = round(
+                crack_confidence,
+                2
+            )
+
+
+            # =================================================
+            # GRADCAM
+            # =================================================
+
+            heatmap = None
+
+            heatmap_path = None
+
+
+            # GradCAM remains disabled for now.
+
+
+            # =================================================
+            # SAVE INSPECTION
+            # =================================================
+
+            create_inspection(
+
+                db=db,
+
+                image_name=file.filename,
+
+                prediction=result,
+
+                confidence=crack_confidence,
+
+                model_name="CNN",
+
+                structure_type=selected_model_name,
+
+                user_id=current_user.id
+
+            )
+
+
+            # =================================================
+            # RETURN RESULT
+            # =================================================
+
+            results.append({
+
+                "filename":
+                file.filename,
+
+                "prediction":
+                result,
+
+                "confidence":
+                crack_confidence,
+
+                "structure":
+                selected_model_name,
+
+                "structure_confidence":
+                structure_confidence_percent,
+
+                "model_name":
+                "CNN",
+
+                "heatmap":
+                None
+
+            })
+
+
+        except Exception as error:
+
+            print(
+                f"Error processing "
+                f"{file.filename}: "
+                f"{error}"
+            )
+
+
+            results.append({
+
+                "filename":
+                file.filename,
+
+                "prediction":
+                "Processing Error",
+
+                "confidence":
+                0,
+
+                "structure":
+                "Unknown",
+
+                "structure_confidence":
+                0,
+
+                "model_name":
+                "None",
+
+                "heatmap":
+                None,
+
+                "error":
+                str(error)
+
+            })
+
+
+    # ========================================================
+    # FINAL RESPONSE
+    # ========================================================
 
     return {
 
-        "total_images": len(results),
+        "total_images":
+        len(results),
 
-        "results": results
+        "results":
+        results
 
     }
 
+
+# ============================================================
+# HISTORY
+# ============================================================
 
 @app.get("/history/")
 def history(
 
     db: Session = Depends(get_db),
 
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(
+        get_current_user
+    )
 
 ):
 
-    return get_all_inspections(db,current_user.id)
+    return get_all_inspections(
+        db,
+        current_user.id
+    )
 
+
+# ============================================================
+# DELETE HISTORY
+# ============================================================
 
 @app.delete("/history/{inspection_id}/")
 def delete_history(
+
     inspection_id: int,
+
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+
+    current_user: User = Depends(
+        get_current_user
+    )
+
 ):
 
-    inspection = delete_inspection(db, inspection_id,current_user.id)
+    inspection = delete_inspection(
+
+        db,
+
+        inspection_id,
+
+        current_user.id
+
+    )
+
 
     if inspection is None:
 
         raise HTTPException(
+
             status_code=404,
-            detail="Inspection not found."
+
+            detail=
+            "Inspection not found."
+
         )
 
+
     return {
-        "message": "Deleted Successfully"
+
+        "message":
+        "Deleted Successfully"
+
     }
 
+
+# ============================================================
+# DASHBOARD
+# ============================================================
 
 @app.get("/dashboard/stats")
 def dashboard_stats(
+
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+
+    current_user: User = Depends(
+        get_current_user
+    )
+
 ):
-    return get_dashboard_stats(db,current_user.id)
+
+    return get_dashboard_stats(
+        db,
+        current_user.id
+    )
+
+
+# ============================================================
+# REPORT
+# ============================================================
 
 @app.get("/report/{inspection_id}")
 def download_report(
+
     inspection_id: int,
+
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+
+    current_user: User = Depends(
+        get_current_user
+    )
+
 ):
 
     inspection = (
-        db.query(InspectionHistory)
-        .filter(InspectionHistory.id == inspection_id,
-                InspectionHistory.user_id == current_user.id
+
+        db.query(
+            InspectionHistory
         )
+
+        .filter(
+
+            InspectionHistory.id
+            == inspection_id,
+
+            InspectionHistory.user_id
+            == current_user.id
+
+        )
+
         .first()
+
     )
+
 
     if inspection is None:
 
         raise HTTPException(
+
             status_code=404,
-            detail="Inspection not found."
+
+            detail=
+            "Inspection not found."
+
         )
+
 
     data = {
-        "id": inspection.id,
-        "filename": inspection.image_name,
-        "prediction": inspection.prediction,
-        "confidence": inspection.confidence,
-        "structure": inspection.structure_type,
-        "model_name": inspection.model_name,
-        "image_path": os.path.join(
+
+        "id":
+        inspection.id,
+
+        "filename":
+        inspection.image_name,
+
+        "prediction":
+        inspection.prediction,
+
+        "confidence":
+        inspection.confidence,
+
+        "structure":
+        inspection.structure_type,
+
+        "model_name":
+        inspection.model_name,
+
+        "image_path":
+        os.path.join(
+
             "uploaded_images",
+
             inspection.image_name
+
         )
+
     }
 
-    pdf_path = generate_report(data)
+
+    pdf_path = generate_report(
+        data
+    )
+
 
     return FileResponse(
-
         pdf_path,
-
         media_type="application/pdf",
-
-        filename=f"{inspection.image_name}.pdf"
-
+        filename=os.path.basename(
+            pdf_path
+        )
     )
