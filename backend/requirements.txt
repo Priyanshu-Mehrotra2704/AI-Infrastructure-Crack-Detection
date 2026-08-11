@@ -48,4 +48,4 @@ requests
 
 redis
 
-resend
+brevo-python
