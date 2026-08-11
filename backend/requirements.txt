@@ -47,3 +47,5 @@ scikit-image
 requests
 
 redis
+
+resend
