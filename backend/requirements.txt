@@ -45,3 +45,5 @@ scikit-image
 
 # Utilities
 requests
+
+redis
