@@ -1,10 +1,11 @@
 services:
   - type: web
-    name: crackkwatch
+    name: crackwatch
     runtime: static
     rootDir: frontend
     buildCommand: npm ci && npm run build
-    staticPublishPath: frontend/dist
+    staticPublishPath: dist
+
     routes:
       - type: rewrite
         source: /*
