@@ -116,7 +116,7 @@ MODELS = {
     "Wall": load_model(
         os.path.join(
             MODEL_DIR,
-            "wall_best_model.keras"
+            "best_model3.keras"
         ),
         compile=False
     ),
@@ -124,7 +124,7 @@ MODELS = {
     "Deck": load_model(
         os.path.join(
             MODEL_DIR,
-            "deck_best_model_focal.keras"
+            "best_model3.keras"
         ),
         compile=False
     )
