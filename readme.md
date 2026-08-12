@@ -13,7 +13,7 @@ The goal of this project is to build an AI-powered inspection system that can au
 
 This project is currently under development.
 
----
+--
 
 # Objectives
 
