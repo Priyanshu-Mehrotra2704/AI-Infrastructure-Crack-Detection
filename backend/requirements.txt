@@ -1,4 +1,4 @@
-opencv-pythonlow
+opencv-python
 uvicorn[standard]
 
 # Database
