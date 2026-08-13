@@ -1,4 +1,4 @@
-fastapi
+opencv-pythonlow
 uvicorn[standard]
 
 # Database
@@ -22,7 +22,7 @@ python-dotenv
 email-validator
 
 # ML / AI
-tensorflow
+tensorflow-cpu
 numpy
 opencv-python
 pillow
