@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "app.py": {
+      "maxDuration": 300,
+      "includeFiles": "{backend/**/*.py,ai-model/structure_classifier.keras,ai-model/structure_classes.json,ai-model/models/best_model3.keras}",
+      "excludeFiles": "{frontend/**,ai-model/__pycache__/**,ai-model/test_images/**,ai-model/models/deck_*.keras,ai-model/models/wall_*.keras,ai-model/*_pipeline.py,ai-model/train_*.py,ai-model/evaluation.py,ai-model/predict.py,ai-model/test_*.py,backend/__pycache__/**,backend/generated_reports/**,backend/uploaded_images/**}"
+    }
+  }
+}

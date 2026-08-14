@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Secrets and local Vercel state
+.env
+.env.*
+!.env.example
+.vercel/
+
+# Generated runtime files
+backend/uploaded_images/
+backend/generated_reports/
+backend/gradcam/generated_heatmaps/

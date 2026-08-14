@@ -79,6 +79,12 @@ from model_loader import (
     STRUCTURE_CLASSES
 )
 
+from runtime_paths import (
+    HEATMAP_DIR,
+    UPLOAD_DIR,
+    ensure_runtime_directories,
+)
+
 
 # ============================================================
 # DATABASE INITIALIZATION
@@ -109,16 +115,13 @@ app.include_router(
 # GRADCAM DIRECTORY
 # ============================================================
 
-os.makedirs(
-    "gradcam/generated_heatmaps",
-    exist_ok=True
-)
+ensure_runtime_directories()
 
 
 app.mount(
     "/generated_heatmaps",
     StaticFiles(
-        directory="gradcam/generated_heatmaps"
+        directory=str(HEATMAP_DIR)
     ),
     name="generated_heatmaps"
 )
@@ -128,17 +131,20 @@ app.mount(
 # CORS
 # ============================================================
 
-CORS_ORIGINS = os.getenv(
-    "CORS_ORIGINS"
-).split(",")
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173,https://crackwatch.vercel.app",
+    ).split(",")
+    if origin.strip()
+]
 
 
 app.add_middleware(
     CORSMiddleware,
 
-    allow_origins=[
-        "https://crackwatch.vercel.app"
-    ],
+    allow_origins=CORS_ORIGINS,
 
     allow_credentials=True,
 
@@ -350,6 +356,9 @@ async def predict(
 
     for file in files:
 
+        # Never use a client-provided path as a filesystem path.
+        filename = os.path.basename(file.filename or "upload")
+
         try:
 
             # ------------------------------------------------
@@ -363,7 +372,7 @@ async def predict(
 
                 results.append({
 
-                    "filename": file.filename,
+                    "filename": filename,
 
                     "prediction":
                     "Invalid Image",
@@ -393,18 +402,7 @@ async def predict(
             # SAVE IMAGE
             # ------------------------------------------------
 
-            UPLOAD_DIR = "uploaded_images"
-
-            os.makedirs(
-                UPLOAD_DIR,
-                exist_ok=True
-            )
-
-
-            image_path = os.path.join(
-                UPLOAD_DIR,
-                file.filename
-            )
+            image_path = UPLOAD_DIR / filename
 
 
             with open(
@@ -436,7 +434,7 @@ async def predict(
                 results.append({
 
                     "filename":
-                    file.filename,
+                    filename,
 
                     "prediction":
                     "Invalid Image",
@@ -492,7 +490,7 @@ async def predict(
 
             print()
             print(
-                f"Image: {file.filename}"
+                f"Image: {filename}"
             )
 
             print(
@@ -524,7 +522,7 @@ async def predict(
                 results.append({
 
                     "filename":
-                    file.filename,
+                    filename,
 
                     "prediction":
                     "Structure Uncertain",
@@ -569,7 +567,7 @@ async def predict(
                 results.append({
 
                     "filename":
-                    file.filename,
+                    filename,
 
                     "prediction":
                     "Structure Unsupported",
@@ -697,7 +695,7 @@ async def predict(
 
                 db=db,
 
-                image_name=file.filename,
+                image_name=filename,
 
                 prediction=result,
 
@@ -719,7 +717,7 @@ async def predict(
             results.append({
 
                 "filename":
-                file.filename,
+                filename,
 
                 "prediction":
                 result,
@@ -746,7 +744,7 @@ async def predict(
 
             print(
                 f"Error processing "
-                f"{file.filename}: "
+                f"{filename}: "
                 f"{error}"
             )
 
@@ -754,7 +752,7 @@ async def predict(
             results.append({
 
                 "filename":
-                file.filename,
+                filename,
 
                 "prediction":
                 "Processing Error",
@@ -956,13 +954,7 @@ def download_report(
         inspection.model_name,
 
         "image_path":
-        os.path.join(
-
-            "uploaded_images",
-
-            inspection.image_name
-
-        )
+        str(UPLOAD_DIR / os.path.basename(inspection.image_name))
 
     }
 

@@ -1,51 +1,31 @@
-opencv-python
-uvicorn[standard]
-fastapi[standard]
-# Database
-sqlalchemy
-psycopg2-binary
-
-# Authentication
-python-jose[cryptography]
-passlib[bcrypt]
-bcrypt==4.0.1
-python-multipart
-
-# Email verification (token storage / rate-limit)
-redis
-google-auth
-
-# Environment Variables
-python-dotenv
-
-# Email validation (needed for EmailStr in schemas.py)
-email-validator
-
-# ML / AI
-tensorflow-cpu
-numpy
-opencv-python
-pillow
-
-# Data Processing
-pandas
-matplotlib
-
 # API
-python-multipart
+fastapi==0.141.1
+uvicorn==0.52.3
+python-multipart==0.0.32
 
-# CORS
-starlette
+# Database
+sqlalchemy==2.0.52
+psycopg2-binary==2.9.12
 
-# PDF Report
-reportlab
+# Authentication and validation
+python-jose[cryptography]==3.5.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+email-validator==2.3.0
+redis==8.1.0
+google-auth==2.56.3
 
-# Image Processing
-scikit-image
+# Environment variables
+python-dotenv==1.2.2
 
-# Utilities
-requests
+# ML and image processing
+# The headless OpenCV build does not require desktop/GUI system libraries.
+tensorflow-cpu==2.21.0
+numpy==2.4.6
+opencv-python-headless==5.0.0.93
+pillow==12.3.0
 
-redis
-
-brevo-python
+# PDF reports and external APIs
+reportlab==5.0.0
+requests==2.34.2
+brevo-python==5.0.2

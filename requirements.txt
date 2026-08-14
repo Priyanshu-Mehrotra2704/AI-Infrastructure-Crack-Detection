@@ -1,0 +1,4 @@
+# Vercel reads this root file to detect the FastAPI framework. The backend
+# file remains the canonical runtime dependency list used by Docker as well.
+fastapi==0.141.1
+-r backend/requirements.txt

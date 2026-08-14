@@ -1,0 +1,33 @@
+# Frontend is deployed as a separate Vercel project.
+frontend/
+
+# AI training/evaluation files are not needed by the backend function.
+ai-model/__pycache__/
+ai-model/test_images/
+ai-model/models/deck_best_model.keras
+ai-model/models/deck_best_model_focal.keras
+ai-model/models/deck_model.keras
+ai-model/models/wall_best_model.keras
+ai-model/data_pipeline.py
+ai-model/deck_data_pipeline.py
+ai-model/wall_data_pipeline.py
+ai-model/prepare_structure_dataset.py
+ai-model/train_deck_model.py
+ai-model/train_model.py
+ai-model/train_structure_classifier.py
+ai-model/train_wall_model.py
+ai-model/evaluation.py
+ai-model/predict.py
+ai-model/test_structure_classifier.py
+
+# Local/generated backend files.
+backend/__pycache__/
+backend/generated_reports/
+backend/uploaded_images/
+backend/gradcam/generated_heatmaps/
+
+# Development files.
+.git/
+.vscode/
+**/__pycache__/
+**/*.pyc

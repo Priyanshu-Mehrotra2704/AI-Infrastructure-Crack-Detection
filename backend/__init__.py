@@ -1,0 +1,1 @@
+"""CrackWatch FastAPI backend package."""

@@ -15,16 +15,18 @@ from reportlab.lib import colors
 
 from reportlab.lib.styles import getSampleStyleSheet
 
+from runtime_paths import REPORT_DIR
+
 styles = getSampleStyleSheet()
 
 
 def generate_report(data):
 
-    os.makedirs("generated_reports", exist_ok=True)
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
-    filename = f"generated_reports/report_{data['id']}.pdf"
+    filename = REPORT_DIR / f"report_{data['id']}.pdf"
 
-    pdf = SimpleDocTemplate(filename)
+    pdf = SimpleDocTemplate(str(filename))
 
     elements = []
 

@@ -103,31 +103,25 @@ print("LOADING CRACK DETECTION MODELS")
 print("=" * 60)
 
 
+# The current application intentionally uses the same trained model for all
+# three structure types. Load it once and reuse the object; loading the same
+# TensorFlow model three times wastes memory in a serverless function.
+SHARED_CRACK_MODEL = load_model(
+    os.path.join(
+        MODEL_DIR,
+        "best_model3.keras"
+    ),
+    compile=False
+)
+
+
 MODELS = {
 
-    "Pavement": load_model(
-        os.path.join(
-            MODEL_DIR,
-            "best_model3.keras"
-        ),
-        compile=False
-    ),
+    "Pavement": SHARED_CRACK_MODEL,
 
-    "Wall": load_model(
-        os.path.join(
-            MODEL_DIR,
-            "best_model3.keras"
-        ),
-        compile=False
-    ),
+    "Wall": SHARED_CRACK_MODEL,
 
-    "Deck": load_model(
-        os.path.join(
-            MODEL_DIR,
-            "best_model3.keras"
-        ),
-        compile=False
-    )
+    "Deck": SHARED_CRACK_MODEL
 
 }
 
