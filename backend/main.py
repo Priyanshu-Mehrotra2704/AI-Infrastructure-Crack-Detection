@@ -74,9 +74,9 @@ from reports.report_generator import (
 # ============================================================
 
 from model_loader import (
-    MODELS,
-    STRUCTURE_MODEL,
-    STRUCTURE_CLASSES
+    get_structure_model,
+    get_structure_classes,
+    get_crack_model
 )
 
 
@@ -248,7 +248,9 @@ def detect_structure(
     )
 
 
-    prediction = STRUCTURE_MODEL.predict(
+    structure_model = get_structure_model()
+
+    prediction = structure_model.predict(
         structure_input,
         verbose=0
     )[0]
@@ -263,8 +265,9 @@ def detect_structure(
         prediction[predicted_index]
     )
 
+    structure_classes = get_structure_classes()
 
-    structure_name = STRUCTURE_CLASSES[
+    structure_name = structure_classes[
         predicted_index
     ]
 
@@ -281,7 +284,7 @@ def detect_structure(
 # SELECT CRACK MODEL
 # ============================================================
 
-def get_crack_model(
+def get_crack_model_for_structure(
     structure_name
 ):
 
@@ -289,39 +292,22 @@ def get_crack_model(
         structure_name
     )
 
-
     model_name = STRUCTURE_MODEL_MAPPING.get(
         normalized
     )
-
 
     if model_name is None:
 
         return None, None
 
-
-    selected_model = MODELS.get(
+    selected_model = get_crack_model(
         model_name
     )
-
 
     return (
         model_name,
         selected_model
     )
-
-
-# ============================================================
-# HOME
-# ============================================================
-
-@app.get("/")
-def home():
-
-    return {
-        "message":
-        "Welcome to the Image Classification API!"
-    }
 
 
 # ============================================================
@@ -559,7 +545,7 @@ async def predict(
             (
                 selected_model_name,
                 selected_model
-            ) = get_crack_model(
+            ) = get_crack_model_for_structure(
                 detected_structure
             )
 

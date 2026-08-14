@@ -24,12 +24,11 @@ email-validator
 # ML / AI
 tensorflow
 numpy
-opencv-python
+opencv-python-headless
 pillow
 
 # Data Processing
-pandas
-matplotlib
+
 
 # API
 python-multipart
@@ -40,8 +39,6 @@ starlette
 # PDF Report
 reportlab
 
-# Image Processing
-scikit-image
 
 # Utilities
 requests
