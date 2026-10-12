@@ -22,18 +22,6 @@ This project is currently under development.
 * Reduce manual inspection effort
 * Improve infrastructure safety monitoring
 
----
-
-# Planned Features
-
-* Image crack detection
-* Video crack detection
-* Real-time webcam inference
-* Drone stream support
-* Detection dashboard
-* GIS visualization
-* Automated report generation
-* Predictive maintenance analysis
 
 ---
 
