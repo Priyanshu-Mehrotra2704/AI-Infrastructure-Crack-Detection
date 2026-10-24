@@ -94,7 +94,6 @@ AI-Crack-Detection/
 
 # Future Scope
 
-* Real-time drone inspection
 * Multi-user dashboard
 * Cloud deployment
 * Mobile application
