@@ -101,9 +101,3 @@ AI-Crack-Detection/
 # Author
 
 * Priyanshu Mehrotra
-
----
-
-# License
-
-This project is licensed under the MIT License.
