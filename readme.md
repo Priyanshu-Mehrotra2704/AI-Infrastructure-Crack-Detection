@@ -7,9 +7,7 @@ AI Infrastructure Crack Detection is a Computer Vision based project focused on 
 * Roads
 * Tunnels
 
-The goal of this project is to build an AI-powered inspection system that can automatically identify cracks from images, videos, and drone footage.
 
---
 
 # Objectives
 
